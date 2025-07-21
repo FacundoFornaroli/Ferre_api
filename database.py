@@ -5,10 +5,13 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 from typing import Generator
 
-
 conn_str = os.getenv("SQLSERVER_CONN_STR")  
 quoted = urllib.parse.quote_plus(conn_str)
 SQLALCHEMY_DATABASE_URL = f"mssql+pyodbc:///?odbc_connect={quoted}"
+
+Base = declarative_base()
+engine = create_engine(SQLALCHEMY_DATABASE_URL, echo=False)
+SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
 
 # Creamos el engine
 engine = create_engine(
