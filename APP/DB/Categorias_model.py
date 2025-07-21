@@ -1,7 +1,8 @@
 from sqlalchemy import Column, Integer, String, Numeric
 from database import Base 
 from sqlalchemy.orm import relationship
-from datetime import datetime
+from datetime import datetime, Boolean, DateTime
+
 
 
 class Categorias(Base):
