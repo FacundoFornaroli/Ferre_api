@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, Numeric, Boolean, DateTime
 from database import Base 
 from sqlalchemy.orm import relationship
-from datetime import datetime, Boolean, DateTime
+from datetime import datetime
 
 
 
@@ -12,6 +12,6 @@ class Categorias(Base):
     Descripcion = Column(String(500), nullable=True)
     Categoria_Padre = Column(Integer, nullable=True)
     Activo = Column(Boolean, default=True)
-    Fecha_Creacion = Column(Datetime, default=datetime.now)
+    Fecha_Creacion = Column(DateTime, default=datetime.now)
 
 
