@@ -3,6 +3,8 @@ load_dotenv()
 import os, urllib.parse
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
+from typing import Generator
+
 
 conn_str = os.getenv("SQLSERVER_CONN_STR")  
 quoted = urllib.parse.quote_plus(conn_str)
@@ -14,3 +16,5 @@ engine = create_engine(
     fast_executemany=True,   # acelera bulk insert
     echo=True               # pon True si querés ver el SQL
 )
+
+
