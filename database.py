@@ -17,6 +17,9 @@ engine = create_engine(
     echo=True               # pon True si querés ver el SQL
 )
 
+# Creamos la clase de sesión
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
 def get_db() -> Generator:
     db = SessionLocal()
     try:
