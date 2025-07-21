@@ -17,4 +17,9 @@ engine = create_engine(
     echo=True               # pon True si querés ver el SQL
 )
 
-
+def get_db() -> Generator:
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
