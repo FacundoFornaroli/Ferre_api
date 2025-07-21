@@ -12,5 +12,5 @@ SQLALCHEMY_DATABASE_URL = f"mssql+pyodbc:///?odbc_connect={quoted}"
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL,
     fast_executemany=True,   # acelera bulk insert
-    echo=False               # pon True si querés ver el SQL
+    echo=True               # pon True si querés ver el SQL
 )
