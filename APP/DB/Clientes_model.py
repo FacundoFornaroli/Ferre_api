@@ -26,5 +26,7 @@ class Clientes(Base):
     Activo = Column(Boolean, default=True, nullable=False)
     Observaciones = Column(Text, nullable=True)
 
-    
+    def __repr__(self):
+        return f"<Cliente(ID_Cliente={self.ID_Cliente}, Nombre='{self.Nombre}', Apellido='{self.Apellido}', CUIT_CUIL='{self.CUIT_CUIL}', Tipo_Cliente='{self.Tipo_Cliente}', Condicion_IVA='{self.Condicion_IVA}', Direccion='{self.Direccion}', Localidad='{self.Localidad}', Provincia='{self.Provincia}', Codigo_Postal='{self.Codigo_Postal}', Telefono='{self.Telefono}', Telefono_Alternativo='{self.Telefono_Alternativo}', Email='{self.Email}', Fecha_Nacimiento='{self.Fecha_Nacimiento}', Genero='{self.Genero}', Fecha_Alta='{self.Fecha_Alta}', Limite_Credito='{self.Limite_Credito}', Saldo_Actual='{self.Saldo_Actual}', Activo='{self.Activo}', Observaciones='{self.Observaciones}')>"
+        
     
