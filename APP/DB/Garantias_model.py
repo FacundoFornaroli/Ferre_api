@@ -1,11 +1,11 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, CheckConstraint, Numeric, Text
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, CheckConstraint, Numeric, Text, Index
 from database import Base 
 from sqlalchemy.orm import relationship
 from datetime import datetime
 
 class Garantias(Base):
     __tablename__ = "Garantias"
-    ID_Garantia = Column(Integer, primary_key=True, index=Ture)
+    ID_Garantia = Column(Integer, primary_key=True, index=True)
     ID_Producto = Column(Integer, ForeignKey('Productos.ID_Producto'), nullable=False, index=True)
     Tiempo_Garantia = Column(Integer, nullable=False)
     Tipo_Garantia = Column(String(50), nullable=False)
