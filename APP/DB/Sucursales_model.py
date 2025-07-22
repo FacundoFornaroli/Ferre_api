@@ -16,4 +16,6 @@ class Sucursales(Base):
     Horario_Apertura = Column(Time, nullable=True)
     Horario_Cierre = Column(Time, nullable=True)
     Activo = Column(Boolean, default=True, nullable=False)
-    
+
+    def __repr__(self):
+        return f"<Sucursal(ID_Sucursal={self.ID_Sucursal}, Nombre='{self.Nombre}', Activo={self.Activo})>"
