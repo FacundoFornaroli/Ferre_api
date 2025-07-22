@@ -11,4 +11,6 @@ class Unidades_de_medida(Base):
     Abreviatura = Column(String(10), nullable=False, unique=True)
     Activo = Column(Boolean, default=True, nullable=False)
 
-CheckConstraint(Nombre == Abreviatura, name='check_nombre_abreviatura')
+    __table_args__ = (
+        CheckConstraint('Nombre != Abreviatura', name='check_nombre_abreviatura'),
+    )
