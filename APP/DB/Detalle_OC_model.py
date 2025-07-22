@@ -19,4 +19,3 @@ class Detalle_OC(Base):
 
     def __repr__(self):
         return f"<DetalleOC(ID_Detalle_OC={self.ID_Detalle_OC}, ID_OC={self.ID_OC}, ID_Producto={self.ID_Producto}, Cantidad={self.Cantidad})>"
-        
