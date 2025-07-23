@@ -35,3 +35,4 @@ class Movimientos_inventario(Base):
 
     def __repr__(self):
         return f"<Movimientos_inventario(ID_Movimiento={self.ID_Movimiento}, ID_Producto={self.ID_Producto}, ID_Sucursal={self.ID_Sucursal}, Fecha={self.Fecha}, Tipo={self.Tipo}, Cantidad={self.Cantidad}, Costo_Unitario={self.Costo_Unitario}, ID_Usuario={self.ID_Usuario}, ID_Referencia={self.ID_Referencia}, Tipo_Referencia={self.Tipo_Referencia}, Observaciones={self.Observaciones})>"
+        
