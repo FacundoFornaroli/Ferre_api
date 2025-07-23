@@ -27,4 +27,4 @@ class Auditoria_Cambios(Base):
     # Relaciones
     usuario = relationship("Usuarios", back_populates="auditoria_cambios")
 
-        
+    # Revisar todos los modelos y agregar las relaciones correspondientes dia 24/07/2025
