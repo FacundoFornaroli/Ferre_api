@@ -1,4 +1,5 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, CheckConstraint, Numeric
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, CheckConstraint, Numeric, Text, Index
+from sqlalchemy.orm import relationship
 from database import Base 
 from datetime import datetime
 
@@ -21,3 +22,9 @@ class Devoluciones(Base):
 
     def __repr__(self):
         return f"<Devoluciones(ID_Devolucion={self.ID_Devolucion}, ID_Factura_Venta={self.ID_Factura_Venta}, Fecha_Devolucion={self.Fecha_Devolucion}, Motivo={self.Motivo}, Estado={self.Estado}, ID_Usuario={self.ID_Usuario}, Observaciones={self.Observaciones})>"
+    
+    # Relaciones
+    factura_venta = relationship("Facturas_Venta", back_populates="devoluciones")
+    usuario = relationship("Usuarios", back_populates="devoluciones")
+    detalles_devolucion = relationship("Detalles_Devolucion", back_populates="devolucion")
+    
