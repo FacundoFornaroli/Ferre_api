@@ -10,18 +10,32 @@ class Descuentos(Base):
     Descripcion = Column(Text, nullable=True)
     Porcentaje = Column(Numeric(5, 2), nullable=False)
     Monto_Fijo = Column(Numeric(10, 2), nullable=True)
-    Tipo_Descuento = Column(String(20), nullable=False)
-    Fecha_Inicio = Column(Date, nullable=False)
-    Fecha_Fin = Column(Date, nullable=False)
+    Tipo_Descuento = Column(String(20), nullable=False, index=True)
+    Fecha_Inicio = Column(Date, nullable=False, index=True)
+    Fecha_Fin = Column(Date, nullable=False, index=True)
     Cantidad_Minima = Column(Integer, nullable=True)
     Cantidad_Maxima = Column(Integer, nullable=True)
-    Activo = Column(Boolean, nullable=False, default=True)
+    Activo = Column(Boolean, nullable=False, default=True, index=True)
+
+    # Relaciones
+    productos_descuentos = relationship("Productos_Descuentos", back_populates="descuento", cascade="all, delete-orphan")
+    productos = relationship("Productos", secondary="Productos_Descuentos", back_populates="descuentos")
 
     __table_args__ = (
-        CheckConstraint("Tipo_Descuento IN ('Porcentaje', 'Monto Fijo')", name='CK_Descuentos_Tipo'),
+        CheckConstraint("Tipo_Descuento IN ('Porcentaje', 'Monto Fijo')", 
+                       name='CK_Descuentos_Tipo'),
+        CheckConstraint("Porcentaje >= 0 AND Porcentaje <= 100", 
+                       name='CK_Descuentos_Porcentaje'),
+        CheckConstraint("Fecha_Fin >= Fecha_Inicio", 
+                       name='CK_Descuentos_Fechas'),
+        CheckConstraint("(Cantidad_Maxima IS NULL) OR (Cantidad_Maxima >= Cantidad_Minima)", 
+                       name='CK_Descuentos_Cantidades'),
+        Index('IX_Descuentos_Tipo', 'Tipo_Descuento'),
+        Index('IX_Descuentos_FechaInicio', 'Fecha_Inicio'),
+        Index('IX_Descuentos_FechaFin', 'Fecha_Fin'),
         Index('IX_Descuentos_Activo', 'Activo')
     )
 
     def __repr__(self):
-        return f"<Descuentos(ID_Descuento={self.ID_Descuento}, Nombre={self.Nombre}, Descripcion={self.Descripcion}, Porcentaje={self.Porcentaje}, Monto_Fijo={self.Monto_Fijo}, Tipo_Descuento={self.Tipo_Descuento}, Fecha_Inicio={self.Fecha_Inicio}, Fecha_Fin={self.Fecha_Fin}, Cantidad_Minima={self.Cantidad_Minima}, Cantidad_Maxima={self.Cantidad_Maxima}, Activo={self.Activo})>"
+        return f"<Descuento(ID_Descuento={self.ID_Descuento}, Nombre='{self.Nombre}', Tipo='{self.Tipo_Descuento}')>"
     
