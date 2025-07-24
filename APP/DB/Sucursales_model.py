@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, Time, ForeignKey, CheckConstraint
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, Time, ForeignKey, CheckConstraint, Index
 from database import Base 
 from sqlalchemy.orm import relationship
 from datetime import datetime
@@ -16,6 +16,26 @@ class Sucursales(Base):
     Horario_Apertura = Column(Time, nullable=True)
     Horario_Cierre = Column(Time, nullable=True)
     Activo = Column(Boolean, default=True, nullable=False)
+    Fecha_Creacion = Column(DateTime, default=datetime.now, nullable=False)
+
+    # Relaciones
+    usuarios = relationship("Usuarios", back_populates="sucursal")
+    inventarios = relationship("Inventario", back_populates="sucursal")
+    facturas = relationship("Facturas_Venta", back_populates="sucursal")
+    ordenes_compra = relationship("Ordenes_Compra", back_populates="sucursal")
+    movimientos_inventario = relationship("Movimientos_inventario", back_populates="sucursal")
+    transferencias_origen = relationship("Transferencias_Sucursales", 
+                                       foreign_keys="Transferencias_Sucursales.ID_Sucursal_Origen",
+                                       back_populates="sucursal_origen")
+    transferencias_destino = relationship("Transferencias_Sucursales", 
+                                        foreign_keys="Transferencias_Sucursales.ID_Sucursal_Destino",
+                                        back_populates="sucursal_destino")
+
+    __table_args__ = (
+        CheckConstraint('Horario_Cierre > Horario_Apertura', name='CK_Sucursales_Horario'),
+        Index('IX_Sucursales_Provincia', 'Provincia'),
+        Index('IX_Sucursales_Activo', 'Activo')
+    )
 
     def __repr__(self):
         return f"<Sucursal(ID_Sucursal={self.ID_Sucursal}, Nombre='{self.Nombre}', Activo={self.Activo})>"
