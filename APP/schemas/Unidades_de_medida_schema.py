@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, constr, validator
-from typing import Optional, List
+from typing import Optional, List, TYPE_CHECKING
 from datetime import datetime
 
 # Schema Base
@@ -52,11 +52,7 @@ class Unidad_de_medida_simple(Unidad_de_medida_base):
         example=1
     )
     activo: bool
-    productos_count: int = Field(
-        0,
-        description="Cantidad de productos que usan esta unidad",
-        example=5
-    )
+   
 
     class Config:
         orm_mode = True
@@ -64,7 +60,7 @@ class Unidad_de_medida_simple(Unidad_de_medida_base):
 # Schema para respuesta completa
 class Unidad_de_medida_completa(Unidad_de_medida_simple):
     fecha_creacion: datetime
-    productos: Optional[List['ProductoSimple']] = []  # Necesitarías importar ProductoSimple del schema de productos
+    # Eliminar la línea de productos si no es necesaria
 
     class Config:
         orm_mode = True
