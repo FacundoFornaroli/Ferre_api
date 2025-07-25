@@ -1,20 +1,39 @@
-from pydantic import BaseModel, Field, constr
+from pydantic import BaseModel, Field, constr, validator
 from typing import Optional, List
 from datetime import datetime
 
 # Schema Base
 class Unidad_de_medida_base(BaseModel):
-    nombre: constr(min_length=2, max_length=50) = Field(
+    nombre: constr(min_length=2, max_length=50, strip_whitespace=True) = Field(
         ...,
-        descripcion= "Nombre de la unidad de medida",
-        example= "Kilogramo"
+        description="Nombre de la unidad de medida",
+        example="Kilogramo"
     )
-    abreviatura: constr(min_length=2, max_length=10) = Field(
+    abreviatura: constr(min_length=1, max_length=10, strip_whitespace=True) = Field(
         ...,
-        descripcion= "Abreviatura de la unidad de medida",
-        example= "kg"
+        description="Abreviatura de la unidad de medida",
+        example="kg"
     )
-    
+
+    # Validador para asegurar que nombre y abreviatura sean diferentes
+    @validator('abreviatura')
+    def validar_nombre_abreviatura(cls, v, values):
+        if 'nombre' in values and v == values['nombre']:
+            raise ValueError('La abreviatura no puede ser igual al nombre')
+        return v
+
+    @validator('nombre')
+    def validar_nombre(cls, v):
+        if v.lower() in ['none', 'null', 'undefined']:
+            raise ValueError('Nombre no válido')
+        return v.title()  # Capitaliza primera letra
+
+    @validator('abreviatura')
+    def validar_abreviatura(cls, v):
+        if not v.isalnum():  # Solo letras y números
+            raise ValueError('La abreviatura solo puede contener letras y números')
+        return v.lower()  # Convierte a minúsculas
+
 
 class Unidad_de_medida_create(Unidad_de_medida_base):
     pass
@@ -28,11 +47,16 @@ class Unidad_de_medida_update(BaseModel):
 # Schema para respuesta básica
 class Unidad_de_medida_simple(Unidad_de_medida_base):
     id_unidad_de_medida: int = Field(
-        ...;
-        description= "ID unico de la unidad de medida"
-        example= 1
+        ...,
+        description="ID único de la unidad de medida",
+        example=1
     )
     activo: bool
+    productos_count: int = Field(
+        0,
+        description="Cantidad de productos que usan esta unidad",
+        example=5
+    )
 
     class Config:
         orm_mode = True
@@ -40,6 +64,7 @@ class Unidad_de_medida_simple(Unidad_de_medida_base):
 # Schema para respuesta completa
 class Unidad_de_medida_completa(Unidad_de_medida_simple):
     fecha_creacion: datetime
+    productos: Optional[List['ProductoSimple']] = []  # Necesitarías importar ProductoSimple del schema de productos
 
     class Config:
         orm_mode = True
@@ -49,7 +74,22 @@ class Unidad_de_medida_completa(Unidad_de_medida_simple):
                 "nombre": "Kilogramo",
                 "abreviatura": "kg",
                 "activo": True,
-                "fecha_creacion": "2024-01-20T10:00:00"
-            }
+                "fecha_creacion": "2024-01-20T10:00:00",
+                "productos_count": 5
+            },
+            "examples": [
+                {
+                    "nombre": "Metro",
+                    "abreviatura": "m"
+                },
+                {
+                    "nombre": "Litro",
+                    "abreviatura": "l"
+                },
+                {
+                    "nombre": "Unidad",
+                    "abreviatura": "u"
+                }
+            ]
         }
     
