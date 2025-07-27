@@ -12,7 +12,7 @@ from ..schemas.Usuarios_schema import (
 )
 from ..DB.Usuarios_model import Usuarios
 from ..DB.Sucursales_model import Sucursales
-from sqlalchemy import func, and_
+from sqlalchemy import func, and_, case
 from datetime import datetime, timedelta
 from passlib.context import CryptContext
 import jwt
