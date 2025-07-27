@@ -5,6 +5,7 @@ from ...database import get_db  # Un nivel más arriba con tres puntos
 from ..schemas.Categorias_schema import CategoriaBase, CategoriaCreate, CategoriaUpdate, CategoriaSimple, CategoriaCompleta, CategoriaList, CategoriaEstadisticas
 from ..DB.Categorias_model import Categorias  # Note que también es 'Categorias', no 'Categoria'
 from sqlalchemy import func
+from ..DB.Productos_model import Productos
 
 router = APIRouter(
     prefix="/categorias",
@@ -91,8 +92,8 @@ async def create_categoria(
 # Actualizar categoría
 @router.put("/{categoria_id}", response_model=CategoriaCompleta)
 async def update_categoria(
-    categoria_id: int = Path(..., gt=0),
     categoria: CategoriaUpdate,
+    categoria_id: int = Path(..., gt=0),
     db: Session = Depends(get_db)
 ):
     # Buscar categoría existente
