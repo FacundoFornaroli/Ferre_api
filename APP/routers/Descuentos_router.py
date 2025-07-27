@@ -17,7 +17,7 @@ from ..DB.Productos_model import Productos
 from ..DB.Detalles_Factura_Venta_model import Detalles_Factura_Venta
 from ..DB.Facturas_Venta_model import Facturas_Venta
 from ..DB.Usuarios_model import Usuarios
-from sqlalchemy import func, and_, case
+from sqlalchemy import func, and_, case, distinct
 from datetime import datetime, timedelta
 from ..routers.Usuarios_router import get_current_user
 
