@@ -32,6 +32,7 @@ class Productos(Base):
     movimientos_inventario = relationship("Movimientos_inventario", back_populates="producto")
     garantias = relationship("Garantias", back_populates="producto")
     productos_descuentos = relationship("Productos_Descuentos", back_populates="producto")
+    descuentos = relationship("Descuentos", secondary="Productos_Descuentos", back_populates="productos")
     detalles_devolucion = relationship("Detalles_Devolucion", back_populates="producto")
     detalles_transferencia = relationship("Detalles_Transferencia", back_populates="producto")
 
