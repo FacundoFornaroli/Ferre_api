@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, constr, validator, EmailStr
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 
 # Schema Base
@@ -111,7 +111,7 @@ class ProveedorSimple(ProveedorBase):
     )
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 # Schema para respuesta completa
 class ProveedorCompleta(ProveedorSimple):
@@ -137,8 +137,8 @@ class ProveedorCompleta(ProveedorSimple):
     )
 
     class Config:
-        orm_mode = True
-        schema_extra = {
+        from_attributes = True
+        json_schema_extra = {
             "example": {
                 "id_proveedor": 1,
                 "nombre": "Stanley Black & Decker Argentina S.A.",
@@ -163,3 +163,13 @@ class ProveedorCompleta(ProveedorSimple):
                 "observaciones": "Proveedor principal de herramientas"
             }
         }
+
+# Schema para lista paginada de proveedores
+class ProveedorList(BaseModel):
+    total: int = Field(..., description="Total de registros")
+    pagina: int = Field(..., description="Página actual")
+    paginas: int = Field(..., description="Total de páginas")
+    items: List[ProveedorSimple]
+
+    class Config:
+        from_attributes = True

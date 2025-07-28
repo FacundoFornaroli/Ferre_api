@@ -91,7 +91,7 @@ class SucursalSimple(SucursalBase):
     activo: bool
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 # Schema para respuesta completa
 class SucursalCompleta(SucursalSimple):
@@ -108,8 +108,8 @@ class SucursalCompleta(SucursalSimple):
     )
 
     class Config:
-        orm_mode = True
-        schema_extra = {
+        from_attributes = True
+        json_schema_extra = {
             "example": {
                 "id_sucursal": 1,
                 "nombre": "Sucursal Centro",
@@ -127,3 +127,13 @@ class SucursalCompleta(SucursalSimple):
                 "inventario_count": 100
             }
         }
+
+# Schema para lista paginada de sucursales
+class SucursalList(BaseModel):
+    total: int = Field(..., description="Total de registros")
+    pagina: int = Field(..., description="Página actual")
+    paginas: int = Field(..., description="Total de páginas")
+    items: List[SucursalSimple]
+
+    class Config:
+        from_attributes = True

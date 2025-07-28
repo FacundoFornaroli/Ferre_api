@@ -126,7 +126,7 @@ class ProductoSimple(ProductoBase):
     )
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 # Schema para respuesta completa
 class ProductoCompleta(ProductoSimple):
@@ -145,8 +145,8 @@ class ProductoCompleta(ProductoSimple):
     )
 
     class Config:
-        orm_mode = True
-        schema_extra = {
+        from_attributes = True
+        json_schema_extra = {
             "example": {
                 "id_producto": 1,
                 "nombre": "Martillo Profesional",
@@ -175,3 +175,13 @@ class ProductoCompleta(ProductoSimple):
                 "fecha_actualizacion": "2024-01-20T15:30:00"
             }
         }
+
+# Schema para lista paginada de productos
+class ProductoList(BaseModel):
+    total: int = Field(..., description="Total de registros")
+    pagina: int = Field(..., description="Página actual")
+    paginas: int = Field(..., description="Total de páginas")
+    items: List[ProductoSimple]
+
+    class Config:
+        from_attributes = True

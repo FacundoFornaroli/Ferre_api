@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, validator, condecimal, constr
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 
 class PagoBase(BaseModel):
@@ -75,7 +75,7 @@ class PagoSimple(PagoBase):
     )
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class PagoCompleto(PagoSimple):
     factura_numero: str = Field(
@@ -105,8 +105,8 @@ class PagoCompleto(PagoSimple):
     )
 
     class Config:
-        orm_mode = True
-        schema_extra = {
+        from_attributes = True
+        json_schema_extra = {
             "example": {
                 "id_pago": 1,
                 "id_factura_venta": 1,
@@ -128,10 +128,10 @@ class PagoList(BaseModel):
     total_registros: int
     pagina_actual: int
     total_paginas: int
-    pagos: list[PagoSimple]
+    pagos: List[PagoSimple]
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 # Schema adicional para resumen de pagos por método
 class ResumenPagosPorMetodo(BaseModel):
@@ -141,8 +141,8 @@ class ResumenPagosPorMetodo(BaseModel):
     porcentaje_del_total: float
 
     class Config:
-        orm_mode = True
-        schema_extra = {
+        from_attributes = True
+        json_schema_extra = {
             "example": {
                 "metodo": "Efectivo",
                 "cantidad_pagos": 150,

@@ -142,7 +142,7 @@ class ClienteSimple(ClienteBase):
     )
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 # Schema para respuesta completa
 class ClienteCompleta(ClienteSimple):
@@ -163,8 +163,8 @@ class ClienteCompleta(ClienteSimple):
     )
 
     class Config:
-        orm_mode = True
-        schema_extra = {
+        from_attributes = True
+        json_schema_extra = {
             "example": {
                 "id_cliente": 1,
                 "nombre": "Juan Carlos",
@@ -191,3 +191,13 @@ class ClienteCompleta(ClienteSimple):
                 "observaciones": "Cliente preferencial"
             }
         }
+
+# Schema para lista paginada de clientes
+class ClienteList(BaseModel):
+    total: int = Field(..., description="Total de registros")
+    pagina: int = Field(..., description="Página actual")
+    paginas: int = Field(..., description="Total de páginas")
+    items: List[ClienteSimple]
+
+    class Config:
+        from_attributes = True
