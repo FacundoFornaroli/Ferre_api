@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, Path, Security
 from sqlalchemy.orm import Session
 from typing import List, Optional
-from ...database import get_db
-from ..schemas.Auditoria_Cambios_schema import (
+from database import get_db
+from APP.schemas.Auditoria_Cambios_schema import (
     AuditoriaCambiosBase,
     AuditoriaCambiosCreate,
     AuditoriaCambiosSimple,
@@ -10,11 +10,11 @@ from ..schemas.Auditoria_Cambios_schema import (
     EstadisticasAuditoria,
     BusquedaAuditoria
 )
-from ..DB.Auditoria_Cambios_model import Auditoria_Cambios
-from ..DB.Usuarios_model import Usuarios
+from APP.DB.Auditoria_Cambios_model import Auditoria_Cambios
+from APP.DB.Usuarios_model import Usuarios
 from sqlalchemy import func, and_, case, distinct, or_, cast, JSON
 from datetime import datetime, timedelta
-from ..routers.Usuarios_router import get_current_user
+from APP.routers.Usuarios_router import get_current_user
 import json
 
 router = APIRouter(

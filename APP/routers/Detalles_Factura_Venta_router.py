@@ -1,23 +1,23 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, Path, Security
 from sqlalchemy.orm import Session
 from typing import List, Optional
-from ...database import get_db
-from ..schemas.Detalles_Factura_Venta_schema import (
+from database import get_db
+from APP.schemas.Detalles_Factura_Venta_schema import (
     DetalleFacturaVentaBase,
     DetalleFacturaVentaCreate,
     DetalleFacturaVentaUpdate,
     DetalleFacturaVentaSimple,
     DetalleFacturaVentaCompleta
 )
-from ..DB.Detalles_Factura_Venta_model import Detalles_Factura_Venta
-from ..DB.Facturas_Venta_model import Facturas_Venta
-from ..DB.Productos_model import Productos
-from ..DB.Inventario_model import Inventario
-from ..DB.Usuarios_model import Usuarios
-from ..DB.Movimientos_inventario_model import Movimientos_inventario
+from APP.DB.Detalles_Factura_Venta_model import Detalles_Factura_Venta
+from APP.DB.Facturas_Venta_model import Facturas_Venta
+from APP.DB.Productos_model import Productos
+from APP.DB.Inventario_model import Inventario
+from APP.DB.Usuarios_model import Usuarios
+from APP.DB.Movimientos_inventario_model import Movimientos_inventario
 from sqlalchemy import func, and_, case
 from datetime import datetime, timedelta
-from ..routers.Usuarios_router import get_current_user
+from APP.routers.Usuarios_router import get_current_user
 
 router = APIRouter(
     prefix="/detalles-factura",

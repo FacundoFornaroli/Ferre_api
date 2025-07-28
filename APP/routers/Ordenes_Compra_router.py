@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, Path, Security
 from sqlalchemy.orm import Session
 from typing import List, Optional
-from ...database import get_db
-from ..schemas.Ordenes_Compra_schema import (
+from database import get_db
+from APP.schemas.Ordenes_Compra_schema import (
     OrdenCompraBase,
     OrdenCompraCreate,
     OrdenCompraUpdate,
@@ -10,17 +10,17 @@ from ..schemas.Ordenes_Compra_schema import (
     OrdenCompraCompleta,
     DetalleOCCreate
 )
-from ..DB.Ordenes_Compra_model import Ordenes_Compra
-from ..DB.Detalle_OC_model import Detalle_OC
-from ..DB.Proveedores_model import Proveedores
-from ..DB.Productos_model import Productos
-from ..DB.Sucursales_model import Sucursales
-from ..DB.Usuarios_model import Usuarios
-from ..DB.Inventario_model import Inventario
-from ..DB.Movimientos_inventario_model import Movimientos_inventario
+from APP.DB.Ordenes_Compra_model import Ordenes_Compra
+from APP.DB.Detalle_OC_model import Detalle_OC
+from APP.DB.Proveedores_model import Proveedores
+from APP.DB.Productos_model import Productos
+from APP.DB.Sucursales_model import Sucursales
+from APP.DB.Usuarios_model import Usuarios
+from APP.DB.Inventario_model import Inventario
+from APP.DB.Movimientos_inventario_model import Movimientos_inventario
 from sqlalchemy import func, and_, case
 from datetime import datetime, timedelta
-from ..routers.Usuarios_router import get_current_user
+from APP.routers.Usuarios_router import get_current_user
 
 router = APIRouter(
     prefix="/ordenes-compra",

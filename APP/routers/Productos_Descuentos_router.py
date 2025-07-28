@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, Path, Security
 from sqlalchemy.orm import Session
 from typing import List, Optional
-from ...database import get_db
-from ..schemas.Productos_Descuentos_schema import (
+from database import get_db
+from APP.schemas.Productos_Descuentos_schema import (
     ProductoDescuentoBase,
     ProductoDescuentoCreate,
     ProductoDescuentoUpdate,
@@ -11,15 +11,15 @@ from ..schemas.Productos_Descuentos_schema import (
     ResumenDescuentosProducto,
     AnalisisEfectividadDescuentos
 )
-from ..DB.Productos_Descuentos_model import Productos_Descuentos
-from ..DB.Productos_model import Productos
-from ..DB.Descuentos_model import Descuentos
-from ..DB.Detalles_Factura_Venta_model import Detalles_Factura_Venta
-from ..DB.Facturas_Venta_model import Facturas_Venta
-from ..DB.Usuarios_model import Usuarios
+from APP.DB.Productos_Descuentos_model import Productos_Descuentos
+from APP.DB.Productos_model import Productos
+from APP.DB.Descuentos_model import Descuentos
+from APP.DB.Detalles_Factura_Venta_model import Detalles_Factura_Venta
+from APP.DB.Facturas_Venta_model import Facturas_Venta
+from APP.DB.Usuarios_model import Usuarios
 from sqlalchemy import func, and_, case, distinct, or_
 from datetime import datetime, timedelta
-from ..routers.Usuarios_router import get_current_user
+from APP.routers.Usuarios_router import get_current_user
 
 router = APIRouter(
     prefix="/productos-descuentos",

@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, Path, Security
 from sqlalchemy.orm import Session
 from typing import List, Optional
-from ...database import get_db
-from ..schemas.Transferencias_Sucursales_schema import (
+from database import get_db
+from APP.schemas.Transferencias_Sucursales_schema import (
     TransferenciaSucursalBase,
     TransferenciaSucursalCreate,
     TransferenciaSucursalUpdate,
@@ -11,16 +11,16 @@ from ..schemas.Transferencias_Sucursales_schema import (
     DetalleTransferenciaCreate,
     EstadisticasTransferencias
 )
-from ..DB.Transferencias_Sucursales_model import Transferencias_Sucursales
-from ..DB.Detalles_Transferencia_model import Detalles_Transferencia
-from ..DB.Sucursales_model import Sucursales
-from ..DB.Productos_model import Productos
-from ..DB.Inventario_model import Inventario
-from ..DB.Movimientos_inventario_model import Movimientos_inventario
-from ..DB.Usuarios_model import Usuarios
+from APP.DB.Transferencias_Sucursales_model import Transferencias_Sucursales
+from APP.DB.Detalles_Transferencia_model import Detalles_Transferencia
+from APP.DB.Sucursales_model import Sucursales
+from APP.DB.Productos_model import Productos
+from APP.DB.Inventario_model import Inventario
+from APP.DB.Movimientos_inventario_model import Movimientos_inventario
+from APP.DB.Usuarios_model import Usuarios
 from sqlalchemy import func, and_, case, distinct, or_
 from datetime import datetime, timedelta
-from ..routers.Usuarios_router import get_current_user
+from APP.routers.Usuarios_router import get_current_user
 
 router = APIRouter(
     prefix="/transferencias",

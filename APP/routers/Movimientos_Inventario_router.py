@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, Path, Security
 from sqlalchemy.orm import Session
 from typing import List, Optional
-from ...database import get_db
-from ..schemas.Movimientos_Inventario_schema import (
+from database import get_db
+from APP.schemas.Movimientos_Inventario_schema import (
     MovimientoInventarioBase,
     MovimientoInventarioCreate,
     MovimientoInventarioUpdate,
@@ -10,14 +10,14 @@ from ..schemas.Movimientos_Inventario_schema import (
     MovimientoInventarioCompleto,
     AnalisisMovimientos
 )
-from ..DB.Movimientos_inventario_model import Movimientos_inventario
-from ..DB.Productos_model import Productos
-from ..DB.Sucursales_model import Sucursales
-from ..DB.Inventario_model import Inventario
-from ..DB.Usuarios_model import Usuarios
+from APP.DB.Movimientos_inventario_model import Movimientos_inventario
+from APP.DB.Productos_model import Productos
+from APP.DB.Sucursales_model import Sucursales
+from APP.DB.Inventario_model import Inventario
+from APP.DB.Usuarios_model import Usuarios
 from sqlalchemy import func, and_, case
 from datetime import datetime, timedelta
-from ..routers.Usuarios_router import get_current_user
+from APP.routers.Usuarios_router import get_current_user
 
 router = APIRouter(
     prefix="/movimientos-inventario",
