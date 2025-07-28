@@ -32,6 +32,10 @@ class DetalleOCBase(BaseModel):
             raise ValueError('El descuento no puede ser mayor o igual al costo unitario')
         return v
 
+# Schema para Crear Detalle
+class DetalleOCCreate(DetalleOCBase):
+    pass
+
 # Schema Base para Orden de Compra
 class OrdenCompraBase(BaseModel):
     id_proveedor: int = Field(
@@ -62,7 +66,7 @@ class OrdenCompraBase(BaseModel):
 
 # Schema para Crear Orden de Compra
 class OrdenCompraCreate(OrdenCompraBase):
-    detalles: List[DetalleOCBase]
+    detalles: List[DetalleOCCreate]
 
 # Schema para Actualizar Orden de Compra
 class OrdenCompraUpdate(BaseModel):
@@ -95,7 +99,7 @@ class OrdenCompraSimple(BaseModel):
     sucursal_nombre: str = Field(..., description="Nombre de la sucursal")
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 # Schema para Detalle en respuesta
 class DetalleOCResponse(DetalleOCBase):
@@ -106,7 +110,7 @@ class DetalleOCResponse(DetalleOCBase):
     unidad_medida: str
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 # Schema para respuesta completa
 class OrdenCompraCompleta(OrdenCompraSimple):
@@ -137,8 +141,8 @@ class OrdenCompraCompleta(OrdenCompraSimple):
     )
 
     class Config:
-        orm_mode = True
-        schema_extra = {
+        from_attributes = True
+        json_schema_extra = {
             "example": {
                 "id_oc": 1,
                 "numero_oc": "OC-2024-00001",
@@ -185,7 +189,7 @@ class OrdenCompraList(BaseModel):
     ordenes: List[OrdenCompraSimple]
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 # Schema para estadísticas de órdenes de compra
 class EstadisticasOC(BaseModel):
@@ -199,8 +203,8 @@ class EstadisticasOC(BaseModel):
     productos_mas_pedidos: List[dict]
 
     class Config:
-        orm_mode = True
-        schema_extra = {
+        from_attributes = True
+        json_schema_extra = {
             "example": {
                 "total_ordenes": 150,
                 "total_monto": 1500000.00,
