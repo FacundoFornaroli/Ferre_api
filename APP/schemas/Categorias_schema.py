@@ -43,7 +43,7 @@ class CategoriaSimple(CategoriaBase):
     )
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 # Schema para respuesta completa
 class CategoriaCompleta(CategoriaSimple):
@@ -51,8 +51,8 @@ class CategoriaCompleta(CategoriaSimple):
     subcategorias: List['CategoriaSimple'] = []
     
     class Config:
-        orm_mode = True
-        schema_extra = {
+        from_attributes = True
+        json_schema_extra = {
             "example": {
                 "id_categoria": 1,
                 "nombre": "Herramientas Eléctricas",
@@ -64,6 +64,20 @@ class CategoriaCompleta(CategoriaSimple):
                 "subcategorias": []
             }
         }
+
+# Schema para lista paginada de categorías
+class CategoriaList(BaseModel):
+    total_registros: int
+    pagina_actual: int
+    total_paginas: int
+    categorias: List[CategoriaSimple]
+
+# Schema para estadísticas
+class CategoriaEstadisticas(BaseModel):
+    total_categorias: int
+    categorias_activas: int
+    categorias_principales: int
+    categorias_mas_productos: List[dict]
 
 # Para evitar error de referencia circular con subcategorias
 CategoriaSimple.update_forward_refs()
