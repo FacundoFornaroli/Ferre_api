@@ -56,7 +56,7 @@ class DetalleTransferenciaSimple(DetalleTransferenciaBase):
     )
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class DetalleTransferenciaCompleto(DetalleTransferenciaSimple):
     # Información del Producto
@@ -131,8 +131,8 @@ class DetalleTransferenciaCompleto(DetalleTransferenciaSimple):
     )
 
     class Config:
-        orm_mode = True
-        schema_extra = {
+        from_attributes = True
+        json_schema_extra = {
             "example": {
                 "id_detalle_transferencia": 1,
                 "id_transferencia": 1,
@@ -163,7 +163,7 @@ class DetalleTransferenciaList(BaseModel):
     detalles: list[DetalleTransferenciaSimple]
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 # Schema para seguimiento detallado del ítem
 class SeguimientoDetalleTransferencia(BaseModel):
@@ -217,7 +217,7 @@ class SeguimientoDetalleTransferencia(BaseModel):
     )
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 # Schema para análisis de transferencias por producto
 class AnalisisTransferenciasProducto(BaseModel):
@@ -231,8 +231,8 @@ class AnalisisTransferenciasProducto(BaseModel):
     historial_mensual: list[dict]
 
     class Config:
-        orm_mode = True
-        schema_extra = {
+        from_attributes = True
+        json_schema_extra = {
             "example": {
                 "id_producto": 1,
                 "producto_info": {

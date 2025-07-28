@@ -55,7 +55,7 @@ class AuditoriaCambiosSimple(AuditoriaCambiosBase):
     usuario_nombre: str = Field(..., example="Juan Pérez")
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class AuditoriaCambiosCompleta(AuditoriaCambiosSimple):
     # Información adicional del usuario
@@ -100,8 +100,8 @@ class AuditoriaCambiosCompleta(AuditoriaCambiosSimple):
     )
 
     class Config:
-        orm_mode = True
-        schema_extra = {
+        from_attributes = True
+        json_schema_extra = {
             "example": {
                 "id_auditoria": 1,
                 "fecha_operacion": "2024-01-15T10:30:00",
@@ -148,7 +148,7 @@ class AuditoriaCambiosList(BaseModel):
     registros: list[AuditoriaCambiosSimple]
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 # Schema para estadísticas de auditoría
 class EstadisticasAuditoria(BaseModel):
@@ -197,8 +197,8 @@ class EstadisticasAuditoria(BaseModel):
     )
 
     class Config:
-        orm_mode = True
-        schema_extra = {
+        from_attributes = True
+        json_schema_extra = {
             "example": {
                 "periodo": "2024-01",
                 "total_operaciones": 500,
@@ -245,7 +245,7 @@ class BusquedaAuditoria(BaseModel):
     valor_busqueda: Optional[str] = None
 
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "fecha_inicio": "2024-01-01T00:00:00",
                 "fecha_fin": "2024-01-31T23:59:59",

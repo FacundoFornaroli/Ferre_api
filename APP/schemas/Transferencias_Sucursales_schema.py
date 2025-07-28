@@ -15,6 +15,10 @@ class DetalleTransferenciaBase(BaseModel):
         gt=0  # greater than 0
     )
 
+# Schema para Crear Detalle
+class DetalleTransferenciaCreate(DetalleTransferenciaBase):
+    pass
+
 class TransferenciaSucursalBase(BaseModel):
     id_sucursal_origen: int = Field(
         ...,
@@ -39,7 +43,7 @@ class TransferenciaSucursalBase(BaseModel):
         return v
 
 class TransferenciaSucursalCreate(TransferenciaSucursalBase):
-    detalles: List[DetalleTransferenciaBase]
+    detalles: List[DetalleTransferenciaCreate]
 
 class TransferenciaSucursalUpdate(BaseModel):
     estado: Optional[str] = Field(
@@ -72,7 +76,7 @@ class DetalleTransferenciaResponse(DetalleTransferenciaBase):
         return v
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class TransferenciaSucursalSimple(TransferenciaSucursalBase):
     id_transferencia: int = Field(..., description="ID único de la transferencia")
@@ -84,7 +88,7 @@ class TransferenciaSucursalSimple(TransferenciaSucursalBase):
     sucursal_destino_nombre: str = Field(..., example="Sucursal Norte")
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class TransferenciaSucursalCompleta(TransferenciaSucursalSimple):
     fecha_transferencia: Optional[datetime] = None
@@ -108,8 +112,8 @@ class TransferenciaSucursalCompleta(TransferenciaSucursalSimple):
     )
 
     class Config:
-        orm_mode = True
-        schema_extra = {
+        from_attributes = True
+        json_schema_extra = {
             "example": {
                 "id_transferencia": 1,
                 "numero_transferencia": "TR-2024-00001",
@@ -149,7 +153,7 @@ class TransferenciaSucursalList(BaseModel):
     transferencias: List[TransferenciaSucursalSimple]
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 # Schema para estadísticas de transferencias
 class EstadisticasTransferencias(BaseModel):
@@ -205,8 +209,8 @@ class EstadisticasTransferencias(BaseModel):
     )
 
     class Config:
-        orm_mode = True
-        schema_extra = {
+        from_attributes = True
+        json_schema_extra = {
             "example": {
                 "periodo": "2024-01",
                 "total_transferencias": 26,

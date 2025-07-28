@@ -20,6 +20,10 @@ class DetalleDevolucionBase(BaseModel):
         example="Producto presenta falla en el mecanismo de ajuste"
     )
 
+# Schema para Crear Detalle
+class DetalleDevolucionCreate(DetalleDevolucionBase):
+    pass
+
 class DevolucionBase(BaseModel):
     id_factura_venta: int = Field(
         ...,
@@ -38,7 +42,7 @@ class DevolucionBase(BaseModel):
     )
 
 class DevolucionCreate(DevolucionBase):
-    detalles: List[DetalleDevolucionBase]
+    detalles: List[DetalleDevolucionCreate]
 
 class DevolucionUpdate(BaseModel):
     estado: Optional[str] = Field(
@@ -65,7 +69,7 @@ class DetalleDevolucionResponse(DetalleDevolucionBase):
     dias_desde_compra: int = Field(..., example=5)
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class DevolucionSimple(DevolucionBase):
     id_devolucion: int = Field(..., description="ID único de la devolución")
@@ -76,7 +80,7 @@ class DevolucionSimple(DevolucionBase):
     total_items: int = Field(..., example=1)
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class DevolucionCompleta(DevolucionSimple):
     detalles: List[DetalleDevolucionResponse]
@@ -101,8 +105,8 @@ class DevolucionCompleta(DevolucionSimple):
     )
 
     class Config:
-        orm_mode = True
-        schema_extra = {
+        from_attributes = True
+        json_schema_extra = {
             "example": {
                 "id_devolucion": 1,
                 "fecha_devolucion": "2024-01-20T10:30:00",
@@ -144,7 +148,7 @@ class DevolucionList(BaseModel):
     devoluciones: List[DevolucionSimple]
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 # Schema para estadísticas de devoluciones
 class EstadisticasDevoluciones(BaseModel):
@@ -189,8 +193,8 @@ class EstadisticasDevoluciones(BaseModel):
     )
 
     class Config:
-        orm_mode = True
-        schema_extra = {
+        from_attributes = True
+        json_schema_extra = {
             "example": {
                 "periodo": "2024-01",
                 "total_devoluciones": 25,
