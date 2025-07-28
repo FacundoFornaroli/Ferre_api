@@ -254,7 +254,54 @@ async def update_categoria(
     
     db.commit()
     db.refresh(db_categoria)
-    return db_categoria
+
+    # Obtener el conteo de productos
+    productos_count = db.query(func.count(Productos.ID_Producto)).filter(
+        Productos.ID_Categoria == categoria_id,
+        Productos.Activo == True
+    ).scalar()
+
+    # Obtener subcategorías
+    subcategorias = []
+    db_subcategorias = db.query(
+        Categorias,
+        func.count(Productos.ID_Producto).label('productos_count')
+    ).outerjoin(
+        Productos, and_(
+            Productos.ID_Categoria == Categorias.ID_Categoria,
+            Productos.Activo == True
+        )
+    ).filter(
+        Categorias.Categoria_Padre == categoria_id
+    ).group_by(
+        Categorias.ID_Categoria,
+        Categorias.Nombre,
+        Categorias.Descripcion,
+        Categorias.Categoria_Padre,
+        Categorias.Activo
+    ).all()
+
+    for subcat, subcat_productos_count in db_subcategorias:
+        subcategorias.append({
+            "id_categoria": subcat.ID_Categoria,
+            "nombre": subcat.Nombre,
+            "descripcion": subcat.Descripcion,
+            "categoria_padre": subcat.Categoria_Padre,
+            "activo": subcat.Activo,
+            "productos_count": subcat_productos_count
+        })
+
+    # Construir respuesta en el formato correcto
+    return {
+        "id_categoria": db_categoria.ID_Categoria,
+        "nombre": db_categoria.Nombre,
+        "descripcion": db_categoria.Descripcion,
+        "categoria_padre": db_categoria.Categoria_Padre,
+        "activo": db_categoria.Activo,
+        "fecha_creacion": db_categoria.Fecha_Creacion,
+        "productos_count": productos_count,
+        "subcategorias": subcategorias
+    }
 
 # Eliminar categoría (soft delete)
 @router.delete("/{categoria_id}")
