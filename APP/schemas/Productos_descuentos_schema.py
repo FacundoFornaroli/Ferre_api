@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, validator, condecimal
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime, date
 
 class ProductoDescuentoBase(BaseModel):
@@ -27,7 +27,7 @@ class ProductoDescuentoSimple(ProductoDescuentoBase):
     )
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class ProductoDescuentoCompleto(ProductoDescuentoSimple):
     # Información del Producto
@@ -102,8 +102,8 @@ class ProductoDescuentoCompleto(ProductoDescuentoSimple):
     )
 
     class Config:
-        orm_mode = True
-        schema_extra = {
+        from_attributes = True
+        json_schema_extra = {
             "example": {
                 "id_producto_descuento": 1,
                 "id_producto": 1,
@@ -128,10 +128,10 @@ class ProductoDescuentoList(BaseModel):
     total_registros: int
     pagina_actual: int
     total_paginas: int
-    productos_descuentos: list[ProductoDescuentoSimple]
+    productos_descuentos: List[ProductoDescuentoSimple]
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 # Schema para resumen de descuentos por producto
 class ResumenDescuentosProducto(BaseModel):
@@ -139,7 +139,7 @@ class ResumenDescuentosProducto(BaseModel):
     nombre_producto: str
     codigo_producto: Optional[str]
     precio_original: condecimal(decimal_places=2)
-    descuentos_activos: list[dict] = Field(
+    descuentos_activos: List[dict] = Field(
         ...,
         description="Lista de descuentos activos para el producto",
         example=[
@@ -158,7 +158,7 @@ class ResumenDescuentosProducto(BaseModel):
         description="Mejor precio disponible con descuentos",
         example=3825.00
     )
-    historial_descuentos: list[dict] = Field(
+    historial_descuentos: List[dict] = Field(
         ...,
         description="Historial de descuentos aplicados",
         example=[
@@ -172,8 +172,8 @@ class ResumenDescuentosProducto(BaseModel):
     )
 
     class Config:
-        orm_mode = True
-        schema_extra = {
+        from_attributes = True
+        json_schema_extra = {
             "example": {
                 "id_producto": 1,
                 "nombre_producto": "Martillo Profesional",
@@ -210,11 +210,11 @@ class AnalisisEfectividadDescuentos(BaseModel):
     incremento_ventas: float  # porcentaje
     ahorro_total: condecimal(decimal_places=2)
     margen_promedio: float  # porcentaje
-    productos_destacados: list[dict]
+    productos_destacados: List[dict]
 
     class Config:
-        orm_mode = True
-        schema_extra = {
+        from_attributes = True
+        json_schema_extra = {
             "example": {
                 "periodo": "2024-01",
                 "productos_con_descuento": 50,
