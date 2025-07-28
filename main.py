@@ -6,6 +6,7 @@ from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from datetime import datetime
 import time
 import logging
+import traceback
 
 # Importar todos los routers
 from APP.routers.Categorias_router import router as categorias_router
@@ -73,19 +74,29 @@ app.add_middleware(
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
     start_time = time.time()
-    response = await call_next(request)
-    duration = time.time() - start_time
-    
-    logger.info(
-        f"Method: {request.method} - Path: {request.url.path} - "
-        f"Status: {response.status_code} - Duration: {duration:.2f}s"
-    )
-    
-    return response
+    try:
+        response = await call_next(request)
+        duration = time.time() - start_time
+        
+        logger.info(
+            f"Method: {request.method} - Path: {request.url.path} - "
+            f"Status: {response.status_code} - Duration: {duration:.2f}s"
+        )
+        
+        return response
+    except Exception as e:
+        duration = time.time() - start_time
+        logger.error(
+            f"Method: {request.method} - Path: {request.url.path} - "
+            f"Error: {str(e)} - Duration: {duration:.2f}s\n"
+            f"Traceback: {traceback.format_exc()}"
+        )
+        raise
 
 # Manejadores de errores globales
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    logger.error(f"Validation error: {exc.errors()}")
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         content={
@@ -96,6 +107,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 
 @app.exception_handler(IntegrityError)
 async def integrity_exception_handler(request: Request, exc: IntegrityError):
+    logger.error(f"Integrity error: {str(exc)}\n{traceback.format_exc()}")
     return JSONResponse(
         status_code=status.HTTP_409_CONFLICT,
         content={
@@ -106,10 +118,22 @@ async def integrity_exception_handler(request: Request, exc: IntegrityError):
 
 @app.exception_handler(SQLAlchemyError)
 async def sqlalchemy_exception_handler(request: Request, exc: SQLAlchemyError):
+    logger.error(f"Database error: {str(exc)}\n{traceback.format_exc()}")
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content={
             "detail": "Error en la base de datos",
+            "message": str(exc)
+        }
+    )
+
+@app.exception_handler(Exception)
+async def general_exception_handler(request: Request, exc: Exception):
+    logger.error(f"Unexpected error: {str(exc)}\n{traceback.format_exc()}")
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content={
+            "detail": "Error interno del servidor",
             "message": str(exc)
         }
     )
