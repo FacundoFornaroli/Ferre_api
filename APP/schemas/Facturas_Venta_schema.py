@@ -32,6 +32,10 @@ class DetalleFacturaBase(BaseModel):
             raise ValueError('El descuento no puede ser mayor o igual al precio')
         return v
 
+# Schema para Crear Detalle
+class DetalleFacturaCreate(DetalleFacturaBase):
+    pass
+
 # Schema Base para Factura
 class FacturaVentaBase(BaseModel):
     id_cliente: int = Field(
@@ -72,7 +76,7 @@ class FacturaVentaBase(BaseModel):
 
 # Schema para Crear Factura
 class FacturaVentaCreate(FacturaVentaBase):
-    detalles: List[DetalleFacturaBase]
+    detalles: List[DetalleFacturaCreate]
 
 # Schema para Actualizar Factura
 class FacturaVentaUpdate(BaseModel):
@@ -101,7 +105,7 @@ class FacturaVentaSimple(BaseModel):
     sucursal_nombre: str = Field(..., description="Nombre de la sucursal")
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 # Schema para Detalle en respuesta
 class DetalleFacturaResponse(DetalleFacturaBase):
@@ -111,7 +115,7 @@ class DetalleFacturaResponse(DetalleFacturaBase):
     producto_codigo: str
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 # Schema para respuesta completa
 class FacturaVentaCompleta(FacturaVentaSimple):
@@ -134,8 +138,8 @@ class FacturaVentaCompleta(FacturaVentaSimple):
     )
 
     class Config:
-        orm_mode = True
-        schema_extra = {
+        from_attributes = True
+        json_schema_extra = {
             "example": {
                 "id_factura_venta": 1,
                 "numero_factura": "A-0001-00000001",
@@ -181,4 +185,4 @@ class FacturaVentaList(BaseModel):
     facturas: List[FacturaVentaSimple]
 
     class Config:
-        orm_mode = True
+        from_attributes = True
