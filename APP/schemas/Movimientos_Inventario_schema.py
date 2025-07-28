@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, validator, condecimal, constr
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 
 class MovimientoInventarioBase(BaseModel):
@@ -87,7 +87,7 @@ class MovimientoInventarioSimple(MovimientoInventarioBase):
     )
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class MovimientoInventarioCompleto(MovimientoInventarioSimple):
     producto_nombre: str = Field(
@@ -126,8 +126,8 @@ class MovimientoInventarioCompleto(MovimientoInventarioSimple):
     )
 
     class Config:
-        orm_mode = True
-        schema_extra = {
+        from_attributes = True
+        json_schema_extra = {
             "example": {
                 "id_movimiento": 1,
                 "fecha": "2024-01-15T10:30:00",
@@ -157,10 +157,10 @@ class MovimientoInventarioList(BaseModel):
     total_registros: int
     pagina_actual: int
     total_paginas: int
-    movimientos: list[MovimientoInventarioSimple]
+    movimientos: List[MovimientoInventarioSimple]
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 # Schema para análisis de movimientos
 class AnalisisMovimientos(BaseModel):
@@ -183,8 +183,8 @@ class AnalisisMovimientos(BaseModel):
     valor_stock: condecimal(decimal_places=2)
 
     class Config:
-        orm_mode = True
-        schema_extra = {
+        from_attributes = True
+        json_schema_extra = {
             "example": {
                 "producto_id": 1,
                 "producto_nombre": "Martillo Profesional",
