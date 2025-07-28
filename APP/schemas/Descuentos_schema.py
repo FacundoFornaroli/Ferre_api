@@ -118,7 +118,7 @@ class DescuentoSimple(DescuentoBase):
     )
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class ProductoDescuentoResponse(BaseModel):
     id_producto: int
@@ -129,7 +129,7 @@ class ProductoDescuentoResponse(BaseModel):
     ahorro: condecimal(decimal_places=2) = Field(..., example=675.00)
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class DescuentoCompleto(DescuentoSimple):
     productos: List[ProductoDescuentoResponse]
@@ -150,8 +150,8 @@ class DescuentoCompleto(DescuentoSimple):
     )
 
     class Config:
-        orm_mode = True
-        schema_extra = {
+        from_attributes = True
+        json_schema_extra = {
             "example": {
                 "id_descuento": 1,
                 "nombre": "Descuento Black Friday",
@@ -188,7 +188,7 @@ class DescuentoList(BaseModel):
     descuentos: List[DescuentoSimple]
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 # Schema para estadísticas de descuentos
 class EstadisticasDescuentos(BaseModel):
@@ -200,8 +200,8 @@ class EstadisticasDescuentos(BaseModel):
     productos_mas_descontados: List[dict]
 
     class Config:
-        orm_mode = True
-        schema_extra = {
+        from_attributes = True
+        json_schema_extra = {
             "example": {
                 "descuentos_activos": 15,
                 "total_productos_con_descuento": 150,

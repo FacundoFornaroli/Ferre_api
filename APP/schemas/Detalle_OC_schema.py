@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, validator, condecimal
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 
 class DetalleOCBase(BaseModel):
@@ -65,7 +65,7 @@ class DetalleOCSimple(DetalleOCBase):
     )
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class DetalleOCCompleto(DetalleOCSimple):
     producto_nombre: str = Field(
@@ -110,8 +110,8 @@ class DetalleOCCompleto(DetalleOCSimple):
     )
 
     class Config:
-        orm_mode = True
-        schema_extra = {
+        from_attributes = True
+        json_schema_extra = {
             "example": {
                 "id_detalle_oc": 1,
                 "id_oc": 1,
@@ -135,16 +135,16 @@ class DetalleOCList(BaseModel):
     total_registros: int
     pagina_actual: int
     total_paginas: int
-    detalles: list[DetalleOCSimple]
+    detalles: List[DetalleOCSimple]
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 # Schema adicional para análisis de costos
 class AnalisisCostos(BaseModel):
     producto_id: int
     producto_nombre: str
-    historial_costos: list[dict] = Field(
+    historial_costos: List[dict] = Field(
         ...,
         description="Historial de costos del producto",
         example=[
@@ -171,8 +171,8 @@ class AnalisisCostos(BaseModel):
     )
 
     class Config:
-        orm_mode = True
-        schema_extra = {
+        from_attributes = True
+        json_schema_extra = {
             "example": {
                 "producto_id": 1,
                 "producto_nombre": "Martillo Profesional",

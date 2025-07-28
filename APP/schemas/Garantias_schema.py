@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, validator, constr
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 
 class GarantiaBase(BaseModel):
@@ -71,7 +71,7 @@ class GarantiaSimple(GarantiaBase):
     activo: bool = Field(..., description="Estado de la garantía")
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class GarantiaCompleta(GarantiaSimple):
     producto_nombre: str = Field(
@@ -111,8 +111,8 @@ class GarantiaCompleta(GarantiaSimple):
     )
 
     class Config:
-        orm_mode = True
-        schema_extra = {
+        from_attributes = True
+        json_schema_extra = {
             "example": {
                 "id_garantia": 1,
                 "id_producto": 1,
@@ -134,10 +134,10 @@ class GarantiaList(BaseModel):
     total_registros: int
     pagina_actual: int
     total_paginas: int
-    garantias: list[GarantiaSimple]
+    garantias: List[GarantiaSimple]
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 # Schema para registro de ejecución de garantía
 class EjecucionGarantia(BaseModel):
@@ -177,8 +177,8 @@ class EjecucionGarantia(BaseModel):
         return v
 
     class Config:
-        orm_mode = True
-        schema_extra = {
+        from_attributes = True
+        json_schema_extra = {
             "example": {
                 "id_garantia": 1,
                 "id_factura_venta": 1,
@@ -204,11 +204,11 @@ class EstadisticasGarantias(BaseModel):
     garantias_ejecutadas_mes: int
     porcentaje_aprobacion: float
     tiempo_promedio_resolucion: float
-    productos_mas_reclamados: list[dict]
+    productos_mas_reclamados: List[dict]
 
     class Config:
-        orm_mode = True
-        schema_extra = {
+        from_attributes = True
+        json_schema_extra = {
             "example": {
                 "total_garantias_activas": 250,
                 "garantias_por_tipo": {
