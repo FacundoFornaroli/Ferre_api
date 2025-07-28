@@ -83,7 +83,7 @@ class UsuarioSimple(UsuarioBase):
     ultimo_acceso: Optional[datetime] = None
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 # Schema para respuesta completa
 class UsuarioCompleta(UsuarioSimple):
@@ -96,8 +96,8 @@ class UsuarioCompleta(UsuarioSimple):
     )
 
     class Config:
-        orm_mode = True
-        schema_extra = {
+        from_attributes = True
+        json_schema_extra = {
             "example": {
                 "id_usuario": 1,
                 "nombre": "Juan",
