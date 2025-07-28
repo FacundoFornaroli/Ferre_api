@@ -28,6 +28,8 @@ async def get_categorias(
     activo: Optional[bool] = Query(None, description="Filtrar por estado activo/inactivo"),
     categoria_padre: Optional[int] = Query(None, description="Filtrar por categoría padre"),
     buscar: Optional[str] = Query(None, description="Buscar por nombre o descripción"),
+    ordenar_por: Optional[str] = Query("nombre", description="Campo por el cual ordenar"),
+    orden: Optional[str] = Query("asc", enum=["asc", "desc"]),
     db: Session = Depends(get_db)
 ):
     # Query base con conteo de productos
@@ -62,6 +64,21 @@ async def get_categorias(
     
     # Contar total de registros (necesitamos una subquery para el conteo total)
     total = db.query(func.count(Categorias.ID_Categoria)).scalar()
+    
+    # Aplicar ordenamiento
+    if ordenar_por == "nombre":
+        if orden == "desc":
+            query = query.order_by(Categorias.Nombre.desc())
+        else:
+            query = query.order_by(Categorias.Nombre.asc())
+    elif ordenar_por == "fecha_creacion":
+        if orden == "desc":
+            query = query.order_by(Categorias.Fecha_Creacion.desc())
+        else:
+            query = query.order_by(Categorias.Fecha_Creacion.asc())
+    else:
+        # Ordenamiento por defecto
+        query = query.order_by(Categorias.Nombre.asc())
     
     # Aplicar paginación
     resultados = query.offset(skip).limit(limit).all()
