@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, validator, constr
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from datetime import datetime
 
 class AuditoriaCambiosBase(BaseModel):
@@ -145,7 +145,7 @@ class AuditoriaCambiosList(BaseModel):
     total_registros: int
     pagina_actual: int
     total_paginas: int
-    registros: list[AuditoriaCambiosSimple]
+    registros: List[AuditoriaCambiosSimple]
 
     class Config:
         from_attributes = True
@@ -162,7 +162,7 @@ class EstadisticasAuditoria(BaseModel):
             "DELETE": 50
         }
     )
-    operaciones_por_tabla: list[dict] = Field(
+    operaciones_por_tabla: List[dict] = Field(
         ...,
         example=[
             {
@@ -174,7 +174,7 @@ class EstadisticasAuditoria(BaseModel):
             }
         ]
     )
-    usuarios_mas_activos: list[dict] = Field(
+    usuarios_mas_activos: List[dict] = Field(
         ...,
         example=[
             {
@@ -238,10 +238,10 @@ class EstadisticasAuditoria(BaseModel):
 class BusquedaAuditoria(BaseModel):
     fecha_inicio: datetime
     fecha_fin: datetime
-    tablas: Optional[list[str]] = None
-    tipos_operacion: Optional[list[str]] = None
-    usuarios: Optional[list[int]] = None
-    campos_modificados: Optional[list[str]] = None
+    tablas: Optional[List[str]] = None
+    tipos_operacion: Optional[List[str]] = None
+    usuarios: Optional[List[int]] = None
+    campos_modificados: Optional[List[str]] = None
     valor_busqueda: Optional[str] = None
 
     class Config:
