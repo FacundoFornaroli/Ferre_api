@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, validator, condecimal
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 
 class DetalleTransferenciaBase(BaseModel):
@@ -160,7 +160,7 @@ class DetalleTransferenciaList(BaseModel):
     total_registros: int
     pagina_actual: int
     total_paginas: int
-    detalles: list[DetalleTransferenciaSimple]
+    detalles: List[DetalleTransferenciaSimple]
 
     class Config:
         from_attributes = True
@@ -186,7 +186,7 @@ class SeguimientoDetalleTransferencia(BaseModel):
             "recibida": 10
         }
     )
-    estados: list[dict] = Field(
+    estados: List[dict] = Field(
         ...,
         example=[
             {
@@ -226,9 +226,9 @@ class AnalisisTransferenciasProducto(BaseModel):
     transferencias_totales: int
     cantidad_total_transferida: int
     tiempo_promedio_transito: float
-    sucursales_origen_frecuentes: list[dict]
-    sucursales_destino_frecuentes: list[dict]
-    historial_mensual: list[dict]
+    sucursales_origen_frecuentes: List[dict]
+    sucursales_destino_frecuentes: List[dict]
+    historial_mensual: List[dict]
 
     class Config:
         from_attributes = True
