@@ -1,17 +1,17 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, Path
 from sqlalchemy.orm import Session
 from typing import List, Optional
-from ...database import get_db
-from ..schemas.Unidades_de_medida_schema import (
+from database import get_db
+from APP.schemas.Unidades_de_medida_schema import (
     Unidad_de_medida_base,
     Unidad_de_medida_create,
     Unidad_de_medida_update,
     Unidad_de_medida_simple,
     Unidad_de_medida_completa
 )
-from ..DB.Unidades_de_medida_model import Unidades_de_medida
+from APP.DB.Unidades_de_medida_model import Unidades_de_medida
 from sqlalchemy import func
-from ..DB.Productos_model import Productos
+from APP.DB.Productos_model import Productos
 
 router = APIRouter(
     prefix="/unidades-medida",
