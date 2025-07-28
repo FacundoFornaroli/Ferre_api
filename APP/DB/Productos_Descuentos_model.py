@@ -10,8 +10,8 @@ class Productos_Descuentos(Base):
     ID_Descuento = Column(Integer, ForeignKey('Descuentos.ID_Descuento', ondelete='CASCADE'), nullable=False, index=True)
 
     # Relaciones
-    producto = relationship("Productos", back_populates="productos_descuentos")
-    descuento = relationship("Descuentos", back_populates="productos_descuentos")
+    producto = relationship("Productos", back_populates="productos_descuentos", overlaps="descuentos,productos")
+    descuento = relationship("Descuentos", back_populates="productos_descuentos", overlaps="descuentos,productos")
 
     __table_args__ = (
         UniqueConstraint('ID_Producto', 'ID_Descuento', name='UQ_Producto_Descuento'),

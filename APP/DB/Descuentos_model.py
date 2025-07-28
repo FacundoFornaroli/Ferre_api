@@ -18,8 +18,8 @@ class Descuentos(Base):
     Activo = Column(Boolean, nullable=False, default=True, index=True)
 
     # Relaciones
-    productos_descuentos = relationship("Productos_Descuentos", back_populates="descuento", cascade="all, delete-orphan")
-    productos = relationship("Productos", secondary="Productos_Descuentos", back_populates="descuentos")
+    productos_descuentos = relationship("Productos_Descuentos", back_populates="descuento", cascade="all, delete-orphan", overlaps="productos")
+    productos = relationship("Productos", secondary="Productos_Descuentos", back_populates="descuentos", overlaps="productos_descuentos")
 
     __table_args__ = (
         CheckConstraint("Tipo_Descuento IN ('Porcentaje', 'Monto Fijo')", 
