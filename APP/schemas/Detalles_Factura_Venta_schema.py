@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, validator, condecimal
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 
 class DetalleFacturaVentaBase(BaseModel):
@@ -65,7 +65,7 @@ class DetalleFacturaVentaSimple(DetalleFacturaVentaBase):
     )
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class DetalleFacturaVentaCompleta(DetalleFacturaVentaSimple):
     producto_nombre: str = Field(
@@ -100,8 +100,8 @@ class DetalleFacturaVentaCompleta(DetalleFacturaVentaSimple):
     )
 
     class Config:
-        orm_mode = True
-        schema_extra = {
+        from_attributes = True
+        json_schema_extra = {
             "example": {
                 "id_detalle": 1,
                 "id_factura_venta": 1,
@@ -123,7 +123,7 @@ class DetalleFacturaVentaList(BaseModel):
     total_registros: int
     pagina_actual: int
     total_paginas: int
-    detalles: list[DetalleFacturaVentaSimple]
+    detalles: List[DetalleFacturaVentaSimple]
 
     class Config:
-        orm_mode = True
+        from_attributes = True
