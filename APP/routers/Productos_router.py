@@ -1,23 +1,23 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, Path, Security
 from sqlalchemy.orm import Session
 from typing import List, Optional
-from ...database import get_db
-from ..schemas.Productos_schema import (
+from database import get_db
+from APP.schemas.Productos_schema import (
     ProductoBase,
     ProductoCreate,
     ProductoUpdate,
     ProductoSimple,
     ProductoCompleta
 )
-from ..DB.Productos_model import Productos
-from ..DB.Categorias_model import Categorias
-from ..DB.Unidades_de_medida_model import Unidades_de_medida
-from ..DB.Inventario_model import Inventario
-from ..DB.Garantias_model import Garantias
-from ..DB.Usuarios_model import Usuarios
+from APP.DB.Productos_model import Productos
+from APP.DB.Categorias_model import Categorias
+from APP.DB.Unidades_de_medida_model import Unidades_de_medida
+from APP.DB.Inventario_model import Inventario
+from APP.DB.Garantias_model import Garantias
+from APP.DB.Usuarios_model import Usuarios
 from sqlalchemy import func, and_, case
 from datetime import datetime, timedelta
-from ..routers.Usuarios_router import get_current_user
+from APP.routers.Usuarios_router import get_current_user
 
 router = APIRouter(
     prefix="/productos",

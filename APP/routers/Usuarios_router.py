@@ -2,16 +2,16 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Path, Security
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from typing import List, Optional
-from ...database import get_db
-from ..schemas.Usuarios_schema import (
+from database import get_db
+from APP.schemas.Usuarios_schema import (
     UsuarioBase,
     UsuarioCreate,
     UsuarioUpdate,
     UsuarioSimple,
     UsuarioCompleta
 )
-from ..DB.Usuarios_model import Usuarios
-from ..DB.Sucursales_model import Sucursales
+from APP.DB.Usuarios_model import Usuarios
+from APP.DB.Sucursales_model import Sucursales
 from sqlalchemy import func, and_, case
 from datetime import datetime, timedelta
 from passlib.context import CryptContext

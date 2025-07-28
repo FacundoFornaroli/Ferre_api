@@ -1,20 +1,20 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, Path, Security
 from sqlalchemy.orm import Session
 from typing import List, Optional
-from ...database import get_db
-from ..schemas.Clientes_schema import (
+from database import get_db
+from APP.schemas.Clientes_schema import (
     ClienteBase,
     ClienteCreate,
     ClienteUpdate,
     ClienteSimple,
     ClienteCompleta
 )
-from ..DB.Clientes_model import Clientes
-from ..DB.Facturas_Venta_model import Facturas_Venta
-from ..DB.Usuarios_model import Usuarios
+from APP.DB.Clientes_model import Clientes
+from APP.DB.Facturas_Venta_model import Facturas_Venta
+from APP.DB.Usuarios_model import Usuarios
 from sqlalchemy import func, and_, case
 from datetime import datetime, timedelta
-from ..routers.Usuarios_router import get_current_user
+from APP.routers.Usuarios_router import get_current_user
 
 router = APIRouter(
     prefix="/clientes",

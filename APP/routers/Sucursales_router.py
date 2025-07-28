@@ -1,20 +1,20 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, Path
+from fastapi import APIRouter, Depends, HTTPException, Query, Path, Security
 from sqlalchemy.orm import Session
 from typing import List, Optional
-from ...database import get_db
-from ..schemas.Sucursales_schema import (
+from database import get_db
+from APP.schemas.Sucursales_schema import (
     SucursalBase,
     SucursalCreate,
     SucursalUpdate,
     SucursalSimple,
     SucursalCompleta
 )
-from ..DB.Sucursales_model import Sucursales
-from ..DB.Usuarios_model import Usuarios
-from ..DB.Inventario_model import Inventario
-from sqlalchemy import func, and_
+from APP.DB.Sucursales_model import Sucursales
+from APP.DB.Usuarios_model import Usuarios
+from APP.DB.Inventario_model import Inventario
+from sqlalchemy import func, and_, case
 from datetime import datetime, time
-from sqlalchemy import case
+from APP.routers.Usuarios_router import get_current_user
 
 router = APIRouter(
     prefix="/sucursales",

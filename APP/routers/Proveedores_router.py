@@ -1,20 +1,20 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, Path, Security
 from sqlalchemy.orm import Session
 from typing import List, Optional
-from ...database import get_db
-from ..schemas.Proveedores_schema import (
+from database import get_db
+from APP.schemas.Proveedores_schema import (
     ProveedorBase,
     ProveedorCreate,
     ProveedorUpdate,
     ProveedorSimple,
     ProveedorCompleta
 )
-from ..DB.Proveedores_model import Proveedores
-from ..DB.Ordenes_Compra_model import Ordenes_Compra
-from ..DB.Usuarios_model import Usuarios
+from APP.DB.Proveedores_model import Proveedores
+from APP.DB.Ordenes_Compra_model import Ordenes_Compra
+from APP.DB.Usuarios_model import Usuarios
 from sqlalchemy import func, and_, case
 from datetime import datetime, timedelta
-from ..routers.Usuarios_router import get_current_user
+from APP.routers.Usuarios_router import get_current_user
 
 router = APIRouter(
     prefix="/proveedores",

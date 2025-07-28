@@ -2,10 +2,18 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Path
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from database import get_db
-from ..schemas.Categorias_schema import CategoriaBase, CategoriaCreate, CategoriaUpdate, CategoriaSimple, CategoriaCompleta, CategoriaList, CategoriaEstadisticas
-from ..DB.Categorias_model import Categorias  # Note que también es 'Categorias', no 'Categoria'
+from APP.schemas.Categorias_schema import (
+    CategoriaBase,
+    CategoriaCreate,
+    CategoriaUpdate,
+    CategoriaSimple,
+    CategoriaCompleta,
+    CategoriaList,
+    CategoriaEstadisticas
+)
+from APP.DB.Categorias_model import Categorias
 from sqlalchemy import func
-from ..DB.Productos_model import Productos
+from APP.DB.Productos_model import Productos
 
 router = APIRouter(
     prefix="/categorias",
