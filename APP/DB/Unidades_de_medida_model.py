@@ -10,6 +10,7 @@ class Unidades_de_medida(Base):
     Nombre = Column(String(50), nullable=False, unique=True)
     Abreviatura = Column(String(10), nullable=False, unique=True)
     Activo = Column(Boolean, default=True, nullable=False, index=True)
+    Fecha_Creacion = Column(DateTime, default=datetime.now, nullable=False)
 
     # Relaciones
     productos = relationship("Productos", back_populates="unidad_medida")
