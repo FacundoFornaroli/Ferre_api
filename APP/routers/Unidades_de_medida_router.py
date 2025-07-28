@@ -7,7 +7,8 @@ from APP.schemas.Unidades_de_medida_schema import (
     Unidad_de_medida_create,
     Unidad_de_medida_update,
     Unidad_de_medida_simple,
-    Unidad_de_medida_completa
+    Unidad_de_medida_completa,
+    Unidad_de_medida_list
 )
 from APP.DB.Unidades_de_medida_model import Unidades_de_medida
 from sqlalchemy import func
@@ -19,7 +20,7 @@ router = APIRouter(
 )
 
 # Obtener todas las unidades con paginación y filtros
-@router.get("/", response_model=List[Unidad_de_medida_simple])
+@router.get("/", response_model=Unidad_de_medida_list)
 async def get_unidades_medida(
     skip: int = Query(0, ge=0, description="Número de registros a saltar"),
     limit: int = Query(10, ge=1, le=100, description="Número de registros a retornar"),
