@@ -22,6 +22,9 @@ class Proveedores(Base):
     Fecha_Creacion = Column(DateTime, default=datetime.now, nullable=False)
     Observaciones = Column(Text, nullable=True)
 
+    # Relaciones
+    ordenes_compra = relationship("Ordenes_Compra", back_populates="proveedor")
+
     def __repr__(self):
         return f"<Proveedor(ID_Proveedor={self.ID_Proveedor}, Nombre='{self.Nombre}', CUIT='{self.CUIT}', Condicion_IVA='{self.Condicion_IVA}', Direccion='{self.Direccion}', Localidad='{self.Localidad}', Provincia='{self.Provincia}', Codigo_Postal='{self.Codigo_Postal}', Telefono='{self.Telefono}', Telefono_Alternativo='{self.Telefono_Alternativo}', Email='{self.Email}', Contacto_Persona='{self.Contacto_Persona}', Plazo_Entrega='{self.Plazo_Entrega}', Activo='{self.Activo}', Fecha_Creacion='{self.Fecha_Creacion}', Observaciones='{self.Observaciones}')>"
         

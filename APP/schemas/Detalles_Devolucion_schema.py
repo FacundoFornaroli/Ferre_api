@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, validator, condecimal
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 
 class DetalleDevolucionBase(BaseModel):
@@ -56,7 +56,7 @@ class DetalleDevolucionSimple(DetalleDevolucionBase):
     )
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class DetalleDevolucionCompleto(DetalleDevolucionSimple):
     # Información del Producto
@@ -114,8 +114,8 @@ class DetalleDevolucionCompleto(DetalleDevolucionSimple):
     )
 
     class Config:
-        orm_mode = True
-        schema_extra = {
+        from_attributes = True
+        json_schema_extra = {
             "example": {
                 "id_detalle_devolucion": 1,
                 "id_devolucion": 1,
@@ -140,10 +140,10 @@ class DetalleDevolucionList(BaseModel):
     total_registros: int
     pagina_actual: int
     total_paginas: int
-    detalles: list[DetalleDevolucionSimple]
+    detalles: List[DetalleDevolucionSimple]
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 # Schema para resumen de devoluciones por producto
 class ResumenDevolucionesProducto(BaseModel):
@@ -152,7 +152,7 @@ class ResumenDevolucionesProducto(BaseModel):
     total_devoluciones: int
     cantidad_total_devuelta: int
     monto_total_devuelto: condecimal(decimal_places=2)
-    motivos_principales: list[dict] = Field(
+    motivos_principales: List[dict] = Field(
         ...,
         description="Principales motivos de devolución",
         example=[
@@ -175,8 +175,8 @@ class ResumenDevolucionesProducto(BaseModel):
     )
 
     class Config:
-        orm_mode = True
-        schema_extra = {
+        from_attributes = True
+        json_schema_extra = {
             "example": {
                 "id_producto": 1,
                 "producto_nombre": "Martillo Profesional",
@@ -234,4 +234,4 @@ class AnalisisTecnicoDevolucion(BaseModel):
     )
 
     class Config:
-        orm_mode = True
+        from_attributes = True
