@@ -12,7 +12,7 @@ from APP.schemas.Categorias_schema import (
     CategoriaEstadisticas
 )
 from APP.DB.Categorias_model import Categorias
-from sqlalchemy import func
+from sqlalchemy import func, and_
 from APP.DB.Productos_model import Productos
 
 router = APIRouter(
@@ -30,8 +30,23 @@ async def get_categorias(
     buscar: Optional[str] = Query(None, description="Buscar por nombre o descripción"),
     db: Session = Depends(get_db)
 ):
-    # Query base
-    query = db.query(Categorias)
+    # Query base con conteo de productos
+    query = db.query(
+        Categorias,
+        func.count(Productos.ID_Producto).label('productos_count')
+    ).outerjoin(
+        Productos, and_(
+            Productos.ID_Categoria == Categorias.ID_Categoria,
+            Productos.Activo == True
+        )
+    ).group_by(
+        Categorias.ID_Categoria,
+        Categorias.Nombre,
+        Categorias.Descripcion,
+        Categorias.Categoria_Padre,
+        Categorias.Activo,
+        Categorias.Fecha_Creacion
+    )
     
     # Aplicar filtros
     if activo is not None:
@@ -45,17 +60,30 @@ async def get_categorias(
             (Categorias.Descripcion.ilike(search))
         )
     
-    # Contar total de registros
-    total = query.count()
+    # Contar total de registros (necesitamos una subquery para el conteo total)
+    total = db.query(func.count(Categorias.ID_Categoria)).scalar()
     
     # Aplicar paginación
-    categorias = query.offset(skip).limit(limit).all()
+    resultados = query.offset(skip).limit(limit).all()
+    
+    # Procesar resultados
+    categorias_procesadas = []
+    for categoria, productos_count in resultados:
+        categoria_dict = {
+            "id_categoria": categoria.ID_Categoria,
+            "nombre": categoria.Nombre,
+            "descripcion": categoria.Descripcion,
+            "categoria_padre": categoria.Categoria_Padre,
+            "activo": categoria.Activo,
+            "productos_count": productos_count
+        }
+        categorias_procesadas.append(categoria_dict)
     
     return {
         "total_registros": total,
         "pagina_actual": skip // limit + 1,
         "total_paginas": (total + limit - 1) // limit,
-        "categorias": categorias
+        "categorias": categorias_procesadas
     }
 
 # Obtener una categoría por ID
@@ -64,10 +92,75 @@ async def get_categoria(
     categoria_id: int = Path(..., gt=0, description="ID de la categoría"),
     db: Session = Depends(get_db)
 ):
-    categoria = db.query(Categorias).filter(Categorias.ID_Categoria == categoria_id).first()
-    if not categoria:
+    # Query con conteo de productos
+    result = db.query(
+        Categorias,
+        func.count(Productos.ID_Producto).label('productos_count')
+    ).outerjoin(
+        Productos, and_(
+            Productos.ID_Categoria == Categorias.ID_Categoria,
+            Productos.Activo == True
+        )
+    ).filter(
+        Categorias.ID_Categoria == categoria_id
+    ).group_by(
+        Categorias.ID_Categoria,
+        Categorias.Nombre,
+        Categorias.Descripcion,
+        Categorias.Categoria_Padre,
+        Categorias.Activo,
+        Categorias.Fecha_Creacion
+    ).first()
+    
+    if not result:
         raise HTTPException(status_code=404, detail="Categoría no encontrada")
-    return categoria
+    
+    categoria, productos_count = result
+    
+    # Obtener subcategorías
+    subcategorias = db.query(
+        Categorias,
+        func.count(Productos.ID_Producto).label('productos_count')
+    ).outerjoin(
+        Productos, and_(
+            Productos.ID_Categoria == Categorias.ID_Categoria,
+            Productos.Activo == True
+        )
+    ).filter(
+        Categorias.Categoria_Padre == categoria_id
+    ).group_by(
+        Categorias.ID_Categoria,
+        Categorias.Nombre,
+        Categorias.Descripcion,
+        Categorias.Categoria_Padre,
+        Categorias.Activo,
+        Categorias.Fecha_Creacion
+    ).all()
+    
+    # Procesar subcategorías
+    subcategorias_procesadas = []
+    for subcat, subcat_productos_count in subcategorias:
+        subcat_dict = {
+            "id_categoria": subcat.ID_Categoria,
+            "nombre": subcat.Nombre,
+            "descripcion": subcat.Descripcion,
+            "categoria_padre": subcat.Categoria_Padre,
+            "activo": subcat.Activo,
+            "productos_count": subcat_productos_count
+        }
+        subcategorias_procesadas.append(subcat_dict)
+    
+    # Construir respuesta
+    return {
+        "id_categoria": categoria.ID_Categoria,
+        "nombre": categoria.Nombre,
+        "descripcion": categoria.Descripcion,
+        "categoria_padre": categoria.Categoria_Padre,
+        "activo": categoria.Activo,
+        "fecha_creacion": categoria.Fecha_Creacion,
+        "productos_count": productos_count,
+        "subcategorias": subcategorias_procesadas
+    }
 
 # Crear nueva categoría
 @router.post("/", response_model=CategoriaCompleta)
