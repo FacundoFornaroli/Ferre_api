@@ -16,7 +16,7 @@ from sqlalchemy import func, and_, case
 from datetime import datetime, timedelta
 from passlib.context import CryptContext
 import jwt
-from jwt.exceptions import JWTError
+from jwt.exceptions import PyJWTError
 
 # Configuración de seguridad
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -58,7 +58,7 @@ async def get_current_user(
         email: str = payload.get("sub")
         if email is None:
             raise credentials_exception
-    except JWTError:
+    except PyJWTError:
         raise credentials_exception
     
     user = db.query(Usuarios).filter(Usuarios.Email == email).first()
