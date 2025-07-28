@@ -8,29 +8,27 @@ import time
 import logging
 
 # Importar todos los routers
-from APP.routers import (
-    Categorias_router,
-    Unidades_de_medida_router,
-    Sucursales_router,
-    Usuarios_router,
-    Productos_router,
-    Clientes_router,
-    Proveedores_router,
-    Inventario_router,
-    Facturas_Venta_router,
-    Detalles_Factura_Venta_router,
-    Pagos_router,
-    Ordenes_Compra_router,
-    Detalle_OC_router,
-    Movimientos_Inventario_router,
-    Garantias_router,
-    Descuentos_router,
-    Productos_Descuentos_router,
-    Devoluciones_router,
-    Transferencias_Sucursales_router,
-    Detalles_Transferencias_router,
-    Auditoria_Cambios_router
-)
+from APP.routers.Categorias_router import router as categorias_router
+from APP.routers.Unidades_de_medida_router import router as unidades_medida_router
+from APP.routers.Sucursales_router import router as sucursales_router
+from APP.routers.Usuarios_router import router as usuarios_router
+from APP.routers.Productos_router import router as productos_router
+from APP.routers.Clientes_router import router as clientes_router
+from APP.routers.Proveedores_router import router as proveedores_router
+from APP.routers.Inventario_router import router as inventario_router
+from APP.routers.Facturas_Venta_router import router as facturas_venta_router
+from APP.routers.Detalles_Factura_Venta_router import router as detalles_factura_router
+from APP.routers.Pagos_router import router as pagos_router
+from APP.routers.Ordenes_Compra_router import router as ordenes_compra_router
+from APP.routers.Detalle_OC_router import router as detalle_oc_router
+from APP.routers.Movimientos_Inventario_router import router as movimientos_router
+from APP.routers.Garantias_router import router as garantias_router
+from APP.routers.Descuentos_router import router as descuentos_router
+from APP.routers.Productos_Descuentos_router import router as productos_descuentos_router
+from APP.routers.Devoluciones_router import router as devoluciones_router
+from APP.routers.Transferencias_Sucursales_router import router as transferencias_router
+from APP.routers.Detalles_Transferencias_router import router as detalles_transferencias_router
+from APP.routers.Auditoria_Cambios_router import router as auditoria_router
 
 # Configurar logging
 logging.basicConfig(
@@ -117,27 +115,27 @@ async def sqlalchemy_exception_handler(request: Request, exc: SQLAlchemyError):
     )
 
 # Incluir todos los routers
-app.include_router(Categorias_router.router)
-app.include_router(Unidades_de_medida_router.router)
-app.include_router(Sucursales_router.router)
-app.include_router(Usuarios_router.router)
-app.include_router(Productos_router.router)
-app.include_router(Clientes_router.router)
-app.include_router(Proveedores_router.router)
-app.include_router(Inventario_router.router)
-app.include_router(Facturas_Venta_router.router)
-app.include_router(Detalles_Factura_Venta_router.router)
-app.include_router(Pagos_router.router)
-app.include_router(Ordenes_Compra_router.router)
-app.include_router(Detalle_OC_router.router)
-app.include_router(Movimientos_Inventario_router.router)
-app.include_router(Garantias_router.router)
-app.include_router(Descuentos_router.router)
-app.include_router(Productos_Descuentos_router.router)
-app.include_router(Devoluciones_router.router)
-app.include_router(Transferencias_Sucursales_router.router)
-app.include_router(Detalles_Transferencias_router.router)
-app.include_router(Auditoria_Cambios_router.router)
+app.include_router(categorias_router)
+app.include_router(unidades_medida_router)
+app.include_router(sucursales_router)
+app.include_router(usuarios_router)
+app.include_router(productos_router)
+app.include_router(clientes_router)
+app.include_router(proveedores_router)
+app.include_router(inventario_router)
+app.include_router(facturas_venta_router)
+app.include_router(detalles_factura_router)
+app.include_router(pagos_router)
+app.include_router(ordenes_compra_router)
+app.include_router(detalle_oc_router)
+app.include_router(movimientos_router)
+app.include_router(garantias_router)
+app.include_router(descuentos_router)
+app.include_router(productos_descuentos_router)
+app.include_router(devoluciones_router)
+app.include_router(transferencias_router)
+app.include_router(detalles_transferencias_router)
+app.include_router(auditoria_router)
 
 # Endpoint de estado/salud
 @app.get("/", tags=["Estado"])
