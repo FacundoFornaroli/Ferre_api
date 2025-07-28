@@ -53,18 +53,16 @@ class Unidad_de_medida_simple(Unidad_de_medida_base):
     )
     activo: bool
    
-
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 # Schema para respuesta completa
 class Unidad_de_medida_completa(Unidad_de_medida_simple):
     fecha_creacion: datetime
-    # Eliminar la línea de productos si no es necesaria
 
     class Config:
-        orm_mode = True
-        schema_extra = {
+        from_attributes = True
+        json_schema_extra = {
             "example": {
                 "id_unidad_de_medida": 1,
                 "nombre": "Kilogramo",
@@ -72,20 +70,16 @@ class Unidad_de_medida_completa(Unidad_de_medida_simple):
                 "activo": True,
                 "fecha_creacion": "2024-01-20T10:00:00",
                 "productos_count": 5
-            },
-            "examples": [
-                {
-                    "nombre": "Metro",
-                    "abreviatura": "m"
-                },
-                {
-                    "nombre": "Litro",
-                    "abreviatura": "l"
-                },
-                {
-                    "nombre": "Unidad",
-                    "abreviatura": "u"
-                }
-            ]
+            }
         }
+
+# Schema para lista de unidades de medida
+class Unidad_de_medida_list(BaseModel):
+    total: int = Field(..., description="Total de registros")
+    pagina: int = Field(..., description="Página actual")
+    paginas: int = Field(..., description="Total de páginas")
+    items: List[Unidad_de_medida_simple]
+
+    class Config:
+        from_attributes = True
     
