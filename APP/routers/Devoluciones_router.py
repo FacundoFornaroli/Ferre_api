@@ -12,7 +12,7 @@ from ..schemas.Devoluciones_schema import (
     EstadisticasDevoluciones
 )
 from ..DB.Devoluciones_model import Devoluciones
-from ..DB.Detalles_Devolucion_model import Detalles_Devolucion
+from ..DB.Detalles_Devoluciones_model import Detalles_Devolucion
 from ..DB.Facturas_Venta_model import Facturas_Venta
 from ..DB.Detalles_Factura_Venta_model import Detalles_Factura_Venta
 from ..DB.Productos_model import Productos
