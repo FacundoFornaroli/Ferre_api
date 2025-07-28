@@ -200,12 +200,24 @@ async def create_categoria(
     db_categoria = Categorias(
         Nombre=categoria.nombre,
         Descripcion=categoria.descripcion,
-        Categoria_Padre=categoria.categoria_padre
+        Categoria_Padre=categoria.categoria_padre,
+        Activo=categoria.activo
     )
     db.add(db_categoria)
     db.commit()
     db.refresh(db_categoria)
-    return db_categoria
+
+    # Construir respuesta en el formato correcto
+    return {
+        "id_categoria": db_categoria.ID_Categoria,
+        "nombre": db_categoria.Nombre,
+        "descripcion": db_categoria.Descripcion,
+        "categoria_padre": db_categoria.Categoria_Padre,
+        "activo": db_categoria.Activo,
+        "fecha_creacion": db_categoria.Fecha_Creacion,
+        "productos_count": 0,  # Nueva categoría, no tiene productos
+        "subcategorias": []    # Nueva categoría, no tiene subcategorías
+    }
 
 # Actualizar categoría
 @router.put("/{categoria_id}", response_model=CategoriaCompleta)
