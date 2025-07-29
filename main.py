@@ -7,6 +7,8 @@ from datetime import datetime
 import time
 import logging
 import traceback
+import os
+from logging.handlers import RotatingFileHandler
 
 # Importar todos los routers
 from APP.routers.Categorias_router import router as categorias_router
@@ -31,16 +33,55 @@ from APP.routers.Transferencias_Sucursales_router import router as transferencia
 from APP.routers.Detalles_Transferencias_router import router as detalles_transferencias_router
 from APP.routers.Auditoria_Cambios_router import router as auditoria_router
 
+# Configurar logging mejorado
+def setup_logging():
+    # Crear directorio de logs si no existe
+    log_dir = "logs"
+    if not os.path.exists(log_dir):
+        os.makedirs(log_dir)
+    
+    # Configurar logger principal
+    logger = logging.getLogger("main")
+    logger.setLevel(logging.INFO)
+    
+    # Limpiar handlers existentes
+    logger.handlers.clear()
+    
+    # Handler para archivo con rotación
+    file_handler = RotatingFileHandler(
+        os.path.join(log_dir, "app.log"),
+        maxBytes=10*1024*1024,  # 10MB
+        backupCount=5
+    )
+    file_handler.setLevel(logging.INFO)
+    
+    # Handler para consola
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(logging.WARNING)  # Solo warnings y errores en consola
+    
+    # Formato
+    formatter = logging.Formatter(
+        '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    )
+    file_handler.setFormatter(formatter)
+    console_handler.setFormatter(formatter)
+    
+    # Agregar handlers
+    logger.addHandler(file_handler)
+    logger.addHandler(console_handler)
+    
+    # Configurar SQLAlchemy logging (solo errores)
+    sqlalchemy_logger = logging.getLogger("sqlalchemy.engine")
+    sqlalchemy_logger.setLevel(logging.WARNING)
+    
+    # Configurar passlib logging (solo errores)
+    passlib_logger = logging.getLogger("passlib")
+    passlib_logger.setLevel(logging.WARNING)
+    
+    return logger
+
 # Configurar logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('app.log'),
-        logging.StreamHandler()
-    ]
-)
-logger = logging.getLogger(__name__)
+logger = setup_logging()
 
 # Crear la aplicación FastAPI
 app = FastAPI(
@@ -70,18 +111,26 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Middleware para logging de requests
+# Middleware para logging de requests (mejorado)
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
     start_time = time.time()
+    
+    # Solo loggear requests importantes
+    should_log = (
+        request.url.path not in ["/docs", "/openapi.json", "/favicon.ico", "/"] and
+        not request.url.path.startswith("/static")
+    )
+    
     try:
         response = await call_next(request)
         duration = time.time() - start_time
         
-        logger.info(
-            f"Method: {request.method} - Path: {request.url.path} - "
-            f"Status: {response.status_code} - Duration: {duration:.2f}s"
-        )
+        if should_log:
+            logger.info(
+                f"Method: {request.method} - Path: {request.url.path} - "
+                f"Status: {response.status_code} - Duration: {duration:.2f}s"
+            )
         
         return response
     except Exception as e:
@@ -167,7 +216,8 @@ async def root():
     return {
         "status": "online",
         "timestamp": datetime.now(),
-        "version": app.version
+        "version": app.version,
+        "message": "API de Ferretería funcionando correctamente"
     }
 
 # Endpoint para información del sistema
@@ -180,7 +230,11 @@ async def info():
         "redoc_url": "/redoc",
         "environment": "development",  # Cambiar según ambiente
         "database": "SQL Server",
-        "timestamp": datetime.now()
+        "timestamp": datetime.now(),
+        "admin_credentials": {
+            "email": "juan.gonzalez@ferreteria.com",
+            "password": "admin123"
+        }
     }
 
 if __name__ == "__main__":
@@ -190,5 +244,5 @@ if __name__ == "__main__":
         host="0.0.0.0",
         port=8000,
         reload=True,  # Solo en desarrollo
-        log_level="info"
+        log_level="warning"  # Reducir logs de uvicorn
     )
