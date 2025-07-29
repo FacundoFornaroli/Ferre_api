@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, CheckConstraint, Numeric, Text, Index
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, CheckConstraint, Numeric, Text, Index, and_
 from sqlalchemy.orm import relationship
 from database import Base
 from datetime import datetime
@@ -22,7 +22,13 @@ class Movimientos_inventario(Base):
     producto = relationship("Productos", back_populates="movimientos_inventario")
     sucursal = relationship("Sucursales", back_populates="movimientos_inventario")
     usuario = relationship("Usuarios", back_populates="movimientos_inventario")
-    inventario = relationship("Inventario", back_populates="movimientos")
+    inventario = relationship(
+        "Inventario",
+        primaryjoin="and_(Movimientos_inventario.ID_Producto==Inventario.ID_Producto, "
+                   "Movimientos_inventario.ID_Sucursal==Inventario.ID_Sucursal)",
+        back_populates="movimientos",
+        viewonly=True
+    )
 
     __table_args__ = (
         CheckConstraint("Tipo IN ('Compra', 'Venta', 'Transferencia', 'Ajuste', 'Devolucion')", 

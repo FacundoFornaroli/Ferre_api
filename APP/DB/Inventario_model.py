@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, CheckConstraint, Index, UniqueConstraint
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, CheckConstraint, Index, UniqueConstraint, and_
 from sqlalchemy.orm import relationship
 from database import Base
 from datetime import datetime
@@ -19,7 +19,13 @@ class Inventario(Base):
     # Relaciones
     producto = relationship("Productos", back_populates="inventarios")
     sucursal = relationship("Sucursales", back_populates="inventario")
-    movimientos = relationship("Movimientos_inventario", back_populates="inventario")
+    movimientos = relationship(
+        "Movimientos_inventario",
+        primaryjoin="and_(Inventario.ID_Producto==Movimientos_inventario.ID_Producto, "
+                   "Inventario.ID_Sucursal==Movimientos_inventario.ID_Sucursal)",
+        back_populates="inventario",
+        viewonly=True
+    )
 
     __table_args__ = (
         CheckConstraint('Stock_Minimo >= 0', name='CK_Inventario_Stock_Minimo'),
