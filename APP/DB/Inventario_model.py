@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, CheckConstraint, Index, UniqueConstraint, and_
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, foreign, remote
 from database import Base
 from datetime import datetime
 
@@ -21,8 +21,8 @@ class Inventario(Base):
     sucursal = relationship("Sucursales", back_populates="inventario")
     movimientos = relationship(
         "Movimientos_inventario",
-        primaryjoin="and_(Inventario.ID_Producto==Movimientos_inventario.ID_Producto, "
-                   "Inventario.ID_Sucursal==Movimientos_inventario.ID_Sucursal)",
+        primaryjoin="and_(foreign(Inventario.ID_Producto)==remote(Movimientos_inventario.ID_Producto), "
+                   "foreign(Inventario.ID_Sucursal)==remote(Movimientos_inventario.ID_Sucursal))",
         back_populates="inventario",
         viewonly=True
     )
