@@ -342,8 +342,43 @@ async def get_subcategorias(
     categoria_id: int = Path(..., gt=0),
     db: Session = Depends(get_db)
 ):
-    subcategorias = db.query(Categorias).filter(Categorias.Categoria_Padre == categoria_id).all()
-    return subcategorias
+    # Verificar que la categoría padre existe
+    categoria_padre = db.query(Categorias).filter(Categorias.ID_Categoria == categoria_id).first()
+    if not categoria_padre:
+        raise HTTPException(status_code=404, detail="Categoría no encontrada")
+
+    # Obtener subcategorías con conteo de productos
+    subcategorias = db.query(
+        Categorias,
+        func.count(Productos.ID_Producto).label('productos_count')
+    ).outerjoin(
+        Productos, and_(
+            Productos.ID_Categoria == Categorias.ID_Categoria,
+            Productos.Activo == True
+        )
+    ).filter(
+        Categorias.Categoria_Padre == categoria_id
+    ).group_by(
+        Categorias.ID_Categoria,
+        Categorias.Nombre,
+        Categorias.Descripcion,
+        Categorias.Categoria_Padre,
+        Categorias.Activo,
+        Categorias.Fecha_Creacion
+    ).all()
+
+    # Formatear respuesta
+    return [
+        {
+            "id_categoria": cat.ID_Categoria,
+            "nombre": cat.Nombre,
+            "descripcion": cat.Descripcion,
+            "categoria_padre": cat.Categoria_Padre,
+            "activo": cat.Activo,
+            "productos_count": productos_count
+        }
+        for cat, productos_count in subcategorias
+    ]
 
 # Obtener árbol de categorías
 @router.get("/arbol", response_model=List[dict])
