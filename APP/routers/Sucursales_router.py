@@ -430,20 +430,45 @@ async def delete_sucursal(
     if not db_sucursal:
         raise HTTPException(status_code=404, detail="Sucursal no encontrada")
     
-    # Verificar si tiene usuarios, inventario o ventas asociadas
-    tiene_asociaciones = db.query(
-        or_(
-            exists().where(and_(Usuarios.ID_Sucursal == sucursal_id, Usuarios.Estado == True)),
-            exists().where(and_(Inventario.ID_Sucursal == sucursal_id, Inventario.Activo == True)),
-            exists().where(Facturas_Venta.ID_Sucursal == sucursal_id)
-        )
-    ).scalar()
+    # Verificar si tiene usuarios activos
+    tiene_usuarios = db.query(Usuarios).filter(
+        Usuarios.ID_Sucursal == sucursal_id,
+        Usuarios.Estado == True
+    ).first() is not None
+
+    # Verificar si tiene inventario activo
+    tiene_inventario = db.query(Inventario).filter(
+        Inventario.ID_Sucursal == sucursal_id,
+        Inventario.Activo == True
+    ).first() is not None
+
+    # Verificar si tiene facturas
+    tiene_facturas = db.query(Facturas_Venta).filter(
+        Facturas_Venta.ID_Sucursal == sucursal_id
+    ).first() is not None
     
-    if tiene_asociaciones:
+    if tiene_usuarios or tiene_inventario or tiene_facturas:
         # Soft delete
         db_sucursal.Activo = False
         db.commit()
-        return {"message": "Sucursal desactivada porque tiene elementos asociados"}
+        
+        # Construir mensaje detallado
+        razones = []
+        if tiene_usuarios:
+            razones.append("usuarios activos")
+        if tiene_inventario:
+            razones.append("inventario activo")
+        if tiene_facturas:
+            razones.append("facturas asociadas")
+        
+        return {
+            "message": f"Sucursal desactivada porque tiene {', '.join(razones)}",
+            "detalles": {
+                "tiene_usuarios": tiene_usuarios,
+                "tiene_inventario": tiene_inventario,
+                "tiene_facturas": tiene_facturas
+            }
+        }
     else:
         # Hard delete si no tiene asociaciones
         db.delete(db_sucursal)
