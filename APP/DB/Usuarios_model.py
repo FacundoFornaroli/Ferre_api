@@ -3,6 +3,9 @@ from sqlalchemy.orm import relationship
 from database import Base
 from datetime import datetime
 
+# Importar Sucursales para resolver el error de mapeo
+from APP.DB.Sucursales_model import Sucursales
+
 class Usuarios(Base):
     __tablename__ = "Usuarios"
     
