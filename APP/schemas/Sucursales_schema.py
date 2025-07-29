@@ -1,6 +1,7 @@
-from pydantic import BaseModel, Field, constr, EmailStr
+from pydantic import BaseModel, Field, constr, EmailStr, validator
 from typing import Optional, List
 from datetime import datetime
+import re
 
 class SucursalBase(BaseModel):
     nombre: constr(min_length=1, max_length=100) = Field(..., description="Nombre de la sucursal")
@@ -13,6 +14,23 @@ class SucursalBase(BaseModel):
     horario_apertura: Optional[str] = Field(None, description="Horario de apertura (formato HH:MM)")
     horario_cierre: Optional[str] = Field(None, description="Horario de cierre (formato HH:MM)")
     activo: bool = Field(True, description="Estado de la sucursal")
+
+    @validator('horario_apertura', 'horario_cierre')
+    def validar_formato_hora(cls, v):
+        if v is not None:
+            # Verificar formato HH:MM
+            if not re.match(r'^([0-1][0-9]|2[0-3]):[0-5][0-9]$', v):
+                raise ValueError('El horario debe estar en formato HH:MM (ejemplo: 08:30)')
+        return v
+
+    @validator('horario_cierre')
+    def validar_horarios(cls, v, values):
+        if v is not None and 'horario_apertura' in values and values['horario_apertura'] is not None:
+            hora_apertura = datetime.strptime(values['horario_apertura'], '%H:%M').time()
+            hora_cierre = datetime.strptime(v, '%H:%M').time()
+            if hora_cierre <= hora_apertura:
+                raise ValueError('El horario de cierre debe ser posterior al de apertura')
+        return v
 
     class Config:
         from_attributes = True
