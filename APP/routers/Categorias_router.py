@@ -103,6 +103,45 @@ async def get_categorias(
         "categorias": categorias_procesadas
     }
 
+# Obtener árbol de categorías
+@router.get("/arbol", response_model=List[dict])
+async def get_arbol_categorias(
+    db: Session = Depends(get_db)
+):
+    def construir_arbol(categoria_padre=None):
+        categorias = db.query(
+            Categorias,
+            func.count(Productos.ID_Producto).label('productos_count')
+        ).outerjoin(
+            Productos, and_(
+                Productos.ID_Categoria == Categorias.ID_Categoria,
+                Productos.Activo == True
+            )
+        ).filter(
+            Categorias.Categoria_Padre == categoria_padre,
+            Categorias.Activo == True
+        ).group_by(
+            Categorias.ID_Categoria,
+            Categorias.Nombre,
+            Categorias.Descripcion,
+            Categorias.Categoria_Padre,
+            Categorias.Activo,
+            Categorias.Fecha_Creacion
+        ).all()
+        
+        return [
+            {
+                "id": cat.ID_Categoria,
+                "nombre": cat.Nombre,
+                "descripcion": cat.Descripcion,
+                "productos_count": productos_count,
+                "subcategorias": construir_arbol(cat.ID_Categoria)
+            }
+            for cat, productos_count in categorias
+        ]
+    
+    return construir_arbol()
+
 # Obtener una categoría por ID
 @router.get("/{categoria_id}", response_model=CategoriaCompleta)
 async def get_categoria(
@@ -379,28 +418,6 @@ async def get_subcategorias(
         }
         for cat, productos_count in subcategorias
     ]
-
-# Obtener árbol de categorías
-@router.get("/arbol", response_model=List[dict])
-async def get_arbol_categorias(
-    db: Session = Depends(get_db)
-):
-    def construir_arbol(categoria_padre=None):
-        categorias = db.query(Categorias).filter(
-            Categorias.Categoria_Padre == categoria_padre,
-            Categorias.Activo == True
-        ).all()
-        
-        return [
-            {
-                "id": cat.ID_Categoria,
-                "nombre": cat.Nombre,
-                "subcategorias": construir_arbol(cat.ID_Categoria)
-            }
-            for cat in categorias
-        ]
-    
-    return construir_arbol()
 
 # Obtener estadísticas de categorías
 @router.get("/estadisticas", response_model=dict)
