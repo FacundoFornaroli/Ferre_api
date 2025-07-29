@@ -59,19 +59,20 @@ async def get_unidades_medida(
     # Contar total de registros
     total = db.query(func.count(Unidades_de_medida.ID_Unidad_de_medida)).scalar()
     
-    # Aplicar ordenamiento
+    # Aplicar ordenamiento (requerido por SQL Server para OFFSET/LIMIT)
     if ordenar_por == "nombre":
         if orden == "desc":
-            query = query.order_by(Unidades_de_medida.Nombre.desc())
+            query = query.order_by(Unidades_de_medida.Nombre.desc(), Unidades_de_medida.ID_Unidad_de_medida.asc())
         else:
-            query = query.order_by(Unidades_de_medida.Nombre.asc())
+            query = query.order_by(Unidades_de_medida.Nombre.asc(), Unidades_de_medida.ID_Unidad_de_medida.asc())
     elif ordenar_por == "abreviatura":
         if orden == "desc":
-            query = query.order_by(Unidades_de_medida.Abreviatura.desc())
+            query = query.order_by(Unidades_de_medida.Abreviatura.desc(), Unidades_de_medida.ID_Unidad_de_medida.asc())
         else:
-            query = query.order_by(Unidades_de_medida.Abreviatura.asc())
+            query = query.order_by(Unidades_de_medida.Abreviatura.asc(), Unidades_de_medida.ID_Unidad_de_medida.asc())
     else:
-        query = query.order_by(Unidades_de_medida.Nombre.asc())
+        # Ordenamiento por defecto
+        query = query.order_by(Unidades_de_medida.ID_Unidad_de_medida.asc())
     
     # Aplicar paginación
     resultados = query.offset(skip).limit(limit).all()
