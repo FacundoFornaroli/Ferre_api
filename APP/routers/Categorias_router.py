@@ -142,6 +142,55 @@ async def get_arbol_categorias(
     
     return construir_arbol()
 
+# Obtener estadísticas de categorías
+@router.get("/estadisticas", response_model=CategoriaEstadisticas)
+async def get_estadisticas_categorias(
+    db: Session = Depends(get_db)
+):
+    # Total de categorías
+    total_categorias = db.query(func.count(Categorias.ID_Categoria)).scalar()
+    
+    # Categorías activas
+    categorias_activas = db.query(func.count(Categorias.ID_Categoria)).filter(
+        Categorias.Activo == True
+    ).scalar()
+    
+    # Categorías principales (sin padre)
+    categorias_principales = db.query(func.count(Categorias.ID_Categoria)).filter(
+        Categorias.Categoria_Padre == None
+    ).scalar()
+    
+    # Categorías con más productos
+    categorias_productos = db.query(
+        Categorias.ID_Categoria,
+        Categorias.Nombre,
+        func.count(Productos.ID_Producto).label('total_productos')
+    ).join(
+        Productos, and_(
+            Productos.ID_Categoria == Categorias.ID_Categoria,
+            Productos.Activo == True
+        )
+    ).group_by(
+        Categorias.ID_Categoria,
+        Categorias.Nombre
+    ).order_by(
+        func.count(Productos.ID_Producto).desc()
+    ).limit(5).all()
+    
+    return {
+        "total_categorias": total_categorias,
+        "categorias_activas": categorias_activas,
+        "categorias_principales": categorias_principales,
+        "categorias_mas_productos": [
+            {
+                "id": cat.ID_Categoria,
+                "nombre": cat.Nombre,
+                "total_productos": cat.total_productos
+            }
+            for cat in categorias_productos
+        ]
+    }
+
 # Obtener una categoría por ID
 @router.get("/{categoria_id}", response_model=CategoriaCompleta)
 async def get_categoria(
@@ -418,33 +467,3 @@ async def get_subcategorias(
         }
         for cat, productos_count in subcategorias
     ]
-
-# Obtener estadísticas de categorías
-@router.get("/estadisticas", response_model=dict)
-async def get_estadisticas_categorias(
-    db: Session = Depends(get_db)
-):
-    total_categorias = db.query(func.count(Categorias.ID_Categoria)).scalar()
-    categorias_activas = db.query(func.count(Categorias.ID_Categoria)).filter(Categorias.Activo == True).scalar()
-    categorias_principales = db.query(func.count(Categorias.ID_Categoria)).filter(Categorias.Categoria_Padre == None).scalar()
-    
-    # Categorías con más productos
-    categorias_productos = db.query(
-        Categorias.ID_Categoria,
-        Categorias.Nombre,
-        func.count(Productos.ID_Producto).label('total_productos')
-    ).join(Productos).group_by(Categorias.ID_Categoria).order_by(func.count(Productos.ID_Producto).desc()).limit(5).all()
-    
-    return {
-        "total_categorias": total_categorias,
-        "categorias_activas": categorias_activas,
-        "categorias_principales": categorias_principales,
-        "categorias_mas_productos": [
-            {
-                "id": cat.ID_Categoria,
-                "nombre": cat.Nombre,
-                "total_productos": cat.total_productos
-            }
-            for cat in categorias_productos
-        ]
-    }
