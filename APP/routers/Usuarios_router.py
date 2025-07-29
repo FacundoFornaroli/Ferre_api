@@ -74,76 +74,93 @@ async def get_current_user(
         )
     return user
 
-@router.post("/login", response_model=Token, 
-    description="""
-    Endpoint para iniciar sesión y obtener un token de acceso.
-    
-    - Requiere username (email) y password en formato form-data
-    - Devuelve un token JWT que debe usarse en el header Authorization
-    - El token expira en 30 minutos
-    
-    Ejemplo de uso:
-    ```
-    curl -X POST "http://localhost:8000/usuarios/login" \\
-         -H "Content-Type: application/x-www-form-urlencoded" \\
-         -d "username=usuario@email.com&password=contraseña"
-    ```
-    
-    Luego usar el token:
-    ```
-    curl -X GET "http://localhost:8000/usuarios/" \\
-         -H "Authorization: Bearer {token}"
-    ```
-    """)
+@router.post("/login", response_model=Token)
 async def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db)
 ):
-    # Buscar usuario por email
-    user = db.query(Usuarios).filter(Usuarios.Email == form_data.username).first()
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Email o contraseña incorrectos",
-            headers={"WWW-Authenticate": "Bearer"},
+    try:
+        # Buscar usuario por email
+        user = db.query(Usuarios).filter(Usuarios.Email == form_data.username).first()
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Email o contraseña incorrectos",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        
+        # Verificar que la contraseña esté hasheada
+        if not user.Contraseña.startswith("$2b$"):
+            # Si no está hasheada, hashearla
+            user.Contraseña = get_password_hash(user.Contraseña)
+            db.commit()
+        
+        # Verificar contraseña
+        if not verify_password(form_data.password, user.Contraseña):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Email o contraseña incorrectos",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        
+        # Verificar estado del usuario
+        if not user.Estado:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Usuario inactivo"
+            )
+        
+        # Actualizar último acceso
+        user.Ultimo_Acceso = datetime.utcnow()
+        db.commit()
+        
+        # Crear token
+        access_token = create_access_token(
+            data={"sub": user.Email, "rol": user.Rol}
         )
-    
-    # Verificar contraseña
-    if not verify_password(form_data.password, user.Contraseña):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Email o contraseña incorrectos",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    
-    # Verificar estado del usuario
-    if not user.Estado:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Usuario inactivo"
-        )
-    
-    # Actualizar último acceso
-    user.Ultimo_Acceso = datetime.now()
-    db.commit()
-    
-    # Crear token
-    access_token = create_access_token(
-        data={"sub": user.Email, "rol": user.Rol}
-    )
-    
-    return {
-        "access_token": access_token,
-        "token_type": "bearer",
-        "user": {
-            "id": user.ID_Usuario,
-            "email": user.Email,
-            "nombre": user.Nombre,
-            "apellido": user.Apellido,
-            "rol": user.Rol,
-            "sucursal_id": user.ID_Sucursal
+        
+        return {
+            "access_token": access_token,
+            "token_type": "bearer",
+            "user": {
+                "id": user.ID_Usuario,
+                "email": user.Email,
+                "nombre": user.Nombre,
+                "apellido": user.Apellido,
+                "rol": user.Rol,
+                "sucursal_id": user.ID_Sucursal
+            }
         }
-    }
+    except Exception as e:
+        print(f"Error en login: {str(e)}")
+        if "hash could not be identified" in str(e):
+            # Si el error es de hash, intentar hashear la contraseña
+            try:
+                user.Contraseña = get_password_hash(user.Contraseña)
+                db.commit()
+                # Intentar verificar nuevamente
+                if verify_password(form_data.password, user.Contraseña):
+                    access_token = create_access_token(
+                        data={"sub": user.Email, "rol": user.Rol}
+                    )
+                    return {
+                        "access_token": access_token,
+                        "token_type": "bearer",
+                        "user": {
+                            "id": user.ID_Usuario,
+                            "email": user.Email,
+                            "nombre": user.Nombre,
+                            "apellido": user.Apellido,
+                            "rol": user.Rol,
+                            "sucursal_id": user.ID_Sucursal
+                        }
+                    }
+            except:
+                pass
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error al procesar el login"
+        )
 
 # Obtener todos los usuarios con paginación y filtros
 @router.get("/", response_model=UsuarioList)
