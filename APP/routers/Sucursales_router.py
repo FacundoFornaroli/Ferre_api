@@ -157,8 +157,10 @@ async def get_estadisticas_sucursales(
     sucursales_provincia = db.query(
         Sucursales.Provincia,
         func.count(Sucursales.ID_Sucursal).label('total_sucursales'),
-        func.count(distinct(case([(Sucursales.Activo == True, Sucursales.ID_Sucursal)])))
-            .label('sucursales_activas')
+        func.sum(case(
+            (Sucursales.Activo == True, 1),
+            else_=0
+        )).label('sucursales_activas')
     ).group_by(
         Sucursales.Provincia
     ).order_by(
@@ -194,7 +196,7 @@ async def get_estadisticas_sucursales(
             {
                 "provincia": prov.Provincia,
                 "total_sucursales": prov.total_sucursales,
-                "sucursales_activas": prov.sucursales_activas
+                "sucursales_activas": prov.sucursales_activas or 0
             }
             for prov in sucursales_provincia
         ],
@@ -204,7 +206,7 @@ async def get_estadisticas_sucursales(
                 "nombre": suc.Nombre,
                 "localidad": suc.Localidad,
                 "provincia": suc.Provincia,
-                "total_ventas": suc.total_ventas,
+                "total_ventas": suc.total_ventas or 0,
                 "monto_total": float(suc.monto_total) if suc.monto_total else 0
             }
             for suc in sucursales_ventas
