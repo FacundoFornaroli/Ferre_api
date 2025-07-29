@@ -1,36 +1,38 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, Path, Security
+from fastapi import APIRouter, Depends, HTTPException, Query, Path, Security, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from typing import List, Optional
+from datetime import datetime, timedelta
+from jose import JWTError, jwt
+from passlib.context import CryptContext
 from database import get_db
 from APP.schemas.Usuarios_schema import (
     UsuarioBase,
     UsuarioCreate,
     UsuarioUpdate,
     UsuarioSimple,
-    UsuarioCompleta
+    UsuarioCompleta,
+    UsuarioList,
+    Token,
+    TokenData
 )
 from APP.DB.Usuarios_model import Usuarios
 from APP.DB.Sucursales_model import Sucursales
-from sqlalchemy import func, and_, case
-from datetime import datetime, timedelta
-from passlib.context import CryptContext
-import jwt
-from jwt.exceptions import PyJWTError
+from sqlalchemy import func, and_, or_, case
 
 # Configuración de seguridad
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="usuarios/login")
 SECRET_KEY = "tu_clave_secreta_aqui"  # En producción, usar variable de entorno
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="usuarios/login")
 
 router = APIRouter(
     prefix="/usuarios",
     tags=["Usuarios"]
 )
 
-# Funciones de utilidad para autenticación
 def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
 
@@ -49,7 +51,7 @@ async def get_current_user(
     db: Session = Depends(get_db)
 ):
     credentials_exception = HTTPException(
-        status_code=401,
+        status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Credenciales inválidas",
         headers={"WWW-Authenticate": "Bearer"},
     )
@@ -58,30 +60,66 @@ async def get_current_user(
         email: str = payload.get("sub")
         if email is None:
             raise credentials_exception
-    except PyJWTError:
+        token_data = TokenData(email=email)
+    except JWTError:
         raise credentials_exception
     
-    user = db.query(Usuarios).filter(Usuarios.Email == email).first()
+    user = db.query(Usuarios).filter(Usuarios.Email == token_data.email).first()
     if user is None:
         raise credentials_exception
+    if not user.Estado:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Usuario inactivo"
+        )
     return user
 
-# Login
-@router.post("/login")
+@router.post("/login", response_model=Token, 
+    description="""
+    Endpoint para iniciar sesión y obtener un token de acceso.
+    
+    - Requiere username (email) y password en formato form-data
+    - Devuelve un token JWT que debe usarse en el header Authorization
+    - El token expira en 30 minutos
+    
+    Ejemplo de uso:
+    ```
+    curl -X POST "http://localhost:8000/usuarios/login" \\
+         -H "Content-Type: application/x-www-form-urlencoded" \\
+         -d "username=usuario@email.com&password=contraseña"
+    ```
+    
+    Luego usar el token:
+    ```
+    curl -X GET "http://localhost:8000/usuarios/" \\
+         -H "Authorization: Bearer {token}"
+    ```
+    """)
 async def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db)
 ):
+    # Buscar usuario por email
     user = db.query(Usuarios).filter(Usuarios.Email == form_data.username).first()
-    if not user or not verify_password(form_data.password, user.Contraseña):
+    if not user:
         raise HTTPException(
-            status_code=401,
-            detail="Email o contraseña incorrectos"
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Email o contraseña incorrectos",
+            headers={"WWW-Authenticate": "Bearer"},
         )
     
+    # Verificar contraseña
+    if not verify_password(form_data.password, user.Contraseña):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Email o contraseña incorrectos",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    # Verificar estado del usuario
     if not user.Estado:
         raise HTTPException(
-            status_code=401,
+            status_code=status.HTTP_403_FORBIDDEN,
             detail="Usuario inactivo"
         )
     
@@ -89,9 +127,11 @@ async def login(
     user.Ultimo_Acceso = datetime.now()
     db.commit()
     
+    # Crear token
     access_token = create_access_token(
-        data={"sub": user.Email}
+        data={"sub": user.Email, "rol": user.Rol}
     )
+    
     return {
         "access_token": access_token,
         "token_type": "bearer",
@@ -99,12 +139,14 @@ async def login(
             "id": user.ID_Usuario,
             "email": user.Email,
             "nombre": user.Nombre,
-            "rol": user.Rol
+            "apellido": user.Apellido,
+            "rol": user.Rol,
+            "sucursal_id": user.ID_Sucursal
         }
     }
 
 # Obtener todos los usuarios con paginación y filtros
-@router.get("/", response_model=List[UsuarioSimple])
+@router.get("/", response_model=UsuarioList)
 async def get_usuarios(
     skip: int = Query(0, ge=0),
     limit: int = Query(10, ge=1, le=100),
