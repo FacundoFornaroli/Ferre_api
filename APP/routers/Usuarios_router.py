@@ -205,34 +205,41 @@ async def get_usuario(
 @router.post("/", response_model=UsuarioCompleta)
 async def create_usuario(
     usuario: UsuarioCreate,
-    current_user: Usuarios = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    if current_user.Rol != "Admin":
-        raise HTTPException(status_code=403, detail="Solo administradores pueden crear usuarios")
+    # Verificar si ya existe un usuario con el mismo email
+    db_usuario = db.query(Usuarios).filter(Usuarios.Email == usuario.email).first()
+    if db_usuario:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Ya existe un usuario con este email"
+        )
     
-    # Verificar email único
-    existe_email = db.query(Usuarios).filter(Usuarios.Email == usuario.email).first()
-    if existe_email:
-        raise HTTPException(status_code=400, detail="Email ya registrado")
-    
-    # Verificar CUIL único si se proporciona
+    # Verificar si ya existe un usuario con el mismo CUIL
     if usuario.cuil:
-        existe_cuil = db.query(Usuarios).filter(Usuarios.CUIL == usuario.cuil).first()
-        if existe_cuil:
-            raise HTTPException(status_code=400, detail="CUIL ya registrado")
+        db_usuario = db.query(Usuarios).filter(Usuarios.CUIL == usuario.cuil).first()
+        if db_usuario:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Ya existe un usuario con este CUIL"
+            )
     
-    # Verificar sucursal si se proporciona
+    # Verificar que la sucursal existe si se especifica
     if usuario.id_sucursal:
         sucursal = db.query(Sucursales).filter(
             Sucursales.ID_Sucursal == usuario.id_sucursal,
             Sucursales.Activo == True
         ).first()
         if not sucursal:
-            raise HTTPException(status_code=404, detail="Sucursal no encontrada o inactiva")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Sucursal no encontrada o inactiva"
+            )
     
-    # Crear usuario
+    # Hashear la contraseña
     hashed_password = get_password_hash(usuario.contraseña)
+    
+    # Crear nuevo usuario
     db_usuario = Usuarios(
         Nombre=usuario.nombre,
         Apellido=usuario.apellido,
@@ -240,13 +247,34 @@ async def create_usuario(
         Rol=usuario.rol,
         Email=usuario.email,
         Contraseña=hashed_password,
-        ID_Sucursal=usuario.id_sucursal
+        ID_Sucursal=usuario.id_sucursal,
+        Estado=True
     )
-    
     db.add(db_usuario)
     db.commit()
     db.refresh(db_usuario)
-    return db_usuario
+    
+    # Obtener nombre de la sucursal si existe
+    sucursal_nombre = None
+    if db_usuario.ID_Sucursal:
+        sucursal = db.query(Sucursales).filter(Sucursales.ID_Sucursal == db_usuario.ID_Sucursal).first()
+        if sucursal:
+            sucursal_nombre = sucursal.Nombre
+    
+    return {
+        "id_usuario": db_usuario.ID_Usuario,
+        "nombre": db_usuario.Nombre,
+        "apellido": db_usuario.Apellido,
+        "email": db_usuario.Email,
+        "rol": db_usuario.Rol,
+        "estado": db_usuario.Estado,
+        "sucursal": sucursal_nombre,
+        "cuil": db_usuario.CUIL,
+        "id_sucursal": db_usuario.ID_Sucursal,
+        "ultimo_acceso": db_usuario.Ultimo_Acceso,
+        "creado_el": db_usuario.Creado_el,
+        "actualizado_el": db_usuario.Actualizado_el
+    }
 
 # Actualizar usuario
 @router.put("/{usuario_id}", response_model=UsuarioCompleta)
