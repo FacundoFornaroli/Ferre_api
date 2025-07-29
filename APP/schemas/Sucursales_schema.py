@@ -1,139 +1,146 @@
-from pydantic import BaseModel, Field, constr, validator
-from typing import Optional, List, TYPE_CHECKING
-from datetime import datetime, time
+from pydantic import BaseModel, Field, constr, EmailStr
+from typing import Optional, List
+from datetime import datetime
 
-# Schema Base
 class SucursalBase(BaseModel):
-    nombre: constr(min_length=2, max_length=100, strip_whitespace=True) = Field(
-        ...,
-        description="Nombre de la sucursal",
-        example="Sucursal Centro"
-    )
-    direccion: constr(min_length=5, max_length=200, strip_whitespace=True) = Field(
-        ...,
-        description="Dirección completa de la sucursal",
-        example="Av. Principal 123"
-    )
-    telefono: Optional[constr(max_length=40, strip_whitespace=True)] = Field(
-        None,
-        description="Número de teléfono de la sucursal",
-        example="351-4567890"
-    )
-    email: Optional[constr(max_length=120, strip_whitespace=True)] = Field(
-        None,
-        description="Email de contacto de la sucursal",
-        example="sucursal.centro@ferreteria.com"
-    )
-    localidad: constr(min_length=2, max_length=100, strip_whitespace=True) = Field(
-        ...,
-        description="Localidad donde se encuentra la sucursal",
-        example="Córdoba"
-    )
-    provincia: constr(min_length=2, max_length=50, strip_whitespace=True) = Field(
-        ...,
-        description="Provincia donde se encuentra la sucursal",
-        example="Córdoba"
-    )
-    codigo_postal: Optional[constr(max_length=10, strip_whitespace=True)] = Field(
-        None,
-        description="Código postal de la sucursal",
-        example="5000"
-    )
-    horario_apertura: Optional[time] = Field(
-        None,
-        description="Hora de apertura de la sucursal",
-        example="08:00"
-    )
-    horario_cierre: Optional[time] = Field(
-        None,
-        description="Hora de cierre de la sucursal",
-        example="18:00"
-    )
-
-    @validator('horario_cierre')
-    def validar_horarios(cls, v, values):
-        if v and 'horario_apertura' in values and values['horario_apertura']:
-            if v <= values['horario_apertura']:
-                raise ValueError('El horario de cierre debe ser posterior al de apertura')
-        return v
-
-    @validator('email')
-    def validar_email(cls, v):
-        if v:
-            if '@' not in v or '.' not in v:
-                raise ValueError('Email inválido')
-        return v.lower() if v else v
-
-# Schema para Crear
-class SucursalCreate(SucursalBase):
-    pass
-
-# Schema para Actualizar
-class SucursalUpdate(BaseModel):
-    nombre: Optional[constr(min_length=2, max_length=100)] = None
-    direccion: Optional[constr(min_length=5, max_length=200)] = None
-    telefono: Optional[constr(max_length=40)] = None
-    email: Optional[constr(max_length=120)] = None
-    localidad: Optional[constr(min_length=2, max_length=100)] = None
-    provincia: Optional[constr(min_length=2, max_length=50)] = None
-    codigo_postal: Optional[constr(max_length=10)] = None
-    horario_apertura: Optional[time] = None
-    horario_cierre: Optional[time] = None
-    activo: Optional[bool] = None
-
-# Schema para respuesta básica
-class SucursalSimple(SucursalBase):
-    id_sucursal: int = Field(
-        ...,
-        description="ID único de la sucursal",
-        example=1
-    )
-    activo: bool
+    nombre: constr(min_length=1, max_length=100) = Field(..., description="Nombre de la sucursal")
+    direccion: constr(min_length=1, max_length=200) = Field(..., description="Dirección de la sucursal")
+    telefono: Optional[constr(max_length=40)] = Field(None, description="Teléfono de la sucursal")
+    email: Optional[EmailStr] = Field(None, description="Email de la sucursal")
+    localidad: constr(min_length=1, max_length=100) = Field(..., description="Localidad de la sucursal")
+    provincia: constr(min_length=1, max_length=50) = Field(..., description="Provincia de la sucursal")
+    codigo_postal: Optional[constr(max_length=10)] = Field(None, description="Código postal de la sucursal")
+    horario_apertura: Optional[str] = Field(None, description="Horario de apertura (formato HH:MM)")
+    horario_cierre: Optional[str] = Field(None, description="Horario de cierre (formato HH:MM)")
+    activo: bool = Field(True, description="Estado de la sucursal")
 
     class Config:
         from_attributes = True
 
-# Schema para respuesta completa
+class SucursalCreate(SucursalBase):
+    pass
+
+class SucursalUpdate(BaseModel):
+    nombre: Optional[constr(min_length=1, max_length=100)] = Field(None, description="Nombre de la sucursal")
+    direccion: Optional[constr(min_length=1, max_length=200)] = Field(None, description="Dirección de la sucursal")
+    telefono: Optional[constr(max_length=40)] = Field(None, description="Teléfono de la sucursal")
+    email: Optional[EmailStr] = Field(None, description="Email de la sucursal")
+    localidad: Optional[constr(min_length=1, max_length=100)] = Field(None, description="Localidad de la sucursal")
+    provincia: Optional[constr(min_length=1, max_length=50)] = Field(None, description="Provincia de la sucursal")
+    codigo_postal: Optional[constr(max_length=10)] = Field(None, description="Código postal de la sucursal")
+    horario_apertura: Optional[str] = Field(None, description="Horario de apertura (formato HH:MM)")
+    horario_cierre: Optional[str] = Field(None, description="Horario de cierre (formato HH:MM)")
+    activo: Optional[bool] = Field(None, description="Estado de la sucursal")
+
+    class Config:
+        from_attributes = True
+
+class SucursalSimple(BaseModel):
+    id_sucursal: int = Field(..., description="ID único de la sucursal")
+    nombre: str = Field(..., description="Nombre de la sucursal")
+    direccion: str = Field(..., description="Dirección de la sucursal")
+    telefono: Optional[str] = Field(None, description="Teléfono de la sucursal")
+    email: Optional[str] = Field(None, description="Email de la sucursal")
+    localidad: str = Field(..., description="Localidad de la sucursal")
+    provincia: str = Field(..., description="Provincia de la sucursal")
+    codigo_postal: Optional[str] = Field(None, description="Código postal de la sucursal")
+    horario_apertura: Optional[str] = Field(None, description="Horario de apertura (formato HH:MM)")
+    horario_cierre: Optional[str] = Field(None, description="Horario de cierre (formato HH:MM)")
+    activo: bool = Field(..., description="Estado de la sucursal")
+    usuarios_count: int = Field(0, description="Cantidad de usuarios activos en la sucursal")
+    productos_count: int = Field(0, description="Cantidad de productos activos en la sucursal")
+    ventas_count: int = Field(0, description="Cantidad de ventas realizadas en la sucursal")
+
+    class Config:
+        from_attributes = True
+
 class SucursalCompleta(SucursalSimple):
-    fecha_creacion: datetime
-    usuarios_count: int = Field(
-        0,
-        description="Cantidad de usuarios asignados a la sucursal",
-        example=5
-    )
-    inventario_count: int = Field(
-        0,
-        description="Cantidad de productos en inventario",
-        example=100
-    )
+    fecha_creacion: datetime = Field(..., description="Fecha de creación de la sucursal")
 
     class Config:
         from_attributes = True
         json_schema_extra = {
             "example": {
                 "id_sucursal": 1,
-                "nombre": "Sucursal Centro",
+                "nombre": "Sucursal Central",
                 "direccion": "Av. Principal 123",
-                "telefono": "351-4567890",
-                "email": "sucursal.centro@ferreteria.com",
-                "localidad": "Córdoba",
-                "provincia": "Córdoba",
-                "codigo_postal": "5000",
+                "telefono": "+54 11 1234-5678",
+                "email": "central@ferreteria.com",
+                "localidad": "Ciudad Autónoma de Buenos Aires",
+                "provincia": "Buenos Aires",
+                "codigo_postal": "C1001",
                 "horario_apertura": "08:00",
                 "horario_cierre": "18:00",
                 "activo": True,
-                "fecha_creacion": "2024-01-20T10:00:00",
-                "usuarios_count": 5,
-                "inventario_count": 100
+                "fecha_creacion": "2024-01-01T00:00:00",
+                "usuarios_count": 10,
+                "productos_count": 1000,
+                "ventas_count": 500
             }
         }
 
-# Schema para lista paginada de sucursales
 class SucursalList(BaseModel):
-    total: int = Field(..., description="Total de registros")
-    pagina: int = Field(..., description="Página actual")
-    paginas: int = Field(..., description="Total de páginas")
-    items: List[SucursalSimple]
+    total_registros: int = Field(..., description="Total de registros encontrados")
+    pagina_actual: int = Field(..., description="Número de página actual")
+    total_paginas: int = Field(..., description="Total de páginas disponibles")
+    sucursales: List[SucursalSimple] = Field(..., description="Lista de sucursales")
 
     class Config:
         from_attributes = True
+        json_schema_extra = {
+            "example": {
+                "total_registros": 100,
+                "pagina_actual": 1,
+                "total_paginas": 10,
+                "sucursales": [
+                    {
+                        "id_sucursal": 1,
+                        "nombre": "Sucursal Central",
+                        "direccion": "Av. Principal 123",
+                        "telefono": "+54 11 1234-5678",
+                        "email": "central@ferreteria.com",
+                        "localidad": "Ciudad Autónoma de Buenos Aires",
+                        "provincia": "Buenos Aires",
+                        "codigo_postal": "C1001",
+                        "horario_apertura": "08:00",
+                        "horario_cierre": "18:00",
+                        "activo": True,
+                        "usuarios_count": 10,
+                        "productos_count": 1000,
+                        "ventas_count": 500
+                    }
+                ]
+            }
+        }
+
+class SucursalEstadisticas(BaseModel):
+    total_sucursales: int = Field(..., description="Total de sucursales")
+    sucursales_activas: int = Field(..., description="Total de sucursales activas")
+    sucursales_por_provincia: List[dict] = Field(..., description="Distribución de sucursales por provincia")
+    sucursales_mas_ventas: List[dict] = Field(..., description="Top 5 sucursales con más ventas")
+
+    class Config:
+        from_attributes = True
+        json_schema_extra = {
+            "example": {
+                "total_sucursales": 100,
+                "sucursales_activas": 95,
+                "sucursales_por_provincia": [
+                    {
+                        "provincia": "Buenos Aires",
+                        "total_sucursales": 50,
+                        "sucursales_activas": 48
+                    }
+                ],
+                "sucursales_mas_ventas": [
+                    {
+                        "id": 1,
+                        "nombre": "Sucursal Central",
+                        "localidad": "CABA",
+                        "provincia": "Buenos Aires",
+                        "total_ventas": 1000,
+                        "monto_total": 5000000.00
+                    }
+                ]
+            }
+        }
