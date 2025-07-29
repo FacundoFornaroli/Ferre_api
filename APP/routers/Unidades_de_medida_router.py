@@ -3,15 +3,15 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from database import get_db
 from APP.schemas.Unidades_de_medida_schema import (
-    Unidad_de_medida_base,
-    Unidad_de_medida_create,
-    Unidad_de_medida_update,
-    Unidad_de_medida_simple,
-    Unidad_de_medida_completa,
-    Unidad_de_medida_list
+    UnidadMedidaBase,
+    UnidadMedidaCreate,
+    UnidadMedidaUpdate,
+    UnidadMedidaSimple,
+    UnidadMedidaCompleta,
+    UnidadMedidaList
 )
 from APP.DB.Unidades_de_medida_model import Unidades_de_medida
-from sqlalchemy import func
+from sqlalchemy import func, and_
 from APP.DB.Productos_model import Productos
 
 router = APIRouter(
@@ -19,17 +19,34 @@ router = APIRouter(
     tags=["Unidades de Medida"]
 )
 
-# Obtener todas las unidades con paginación y filtros
-@router.get("/", response_model=Unidad_de_medida_list)
+# Obtener todas las unidades de medida con paginación y filtros
+@router.get("/", response_model=UnidadMedidaList)
 async def get_unidades_medida(
     skip: int = Query(0, ge=0, description="Número de registros a saltar"),
     limit: int = Query(10, ge=1, le=100, description="Número de registros a retornar"),
     activo: Optional[bool] = Query(None, description="Filtrar por estado activo/inactivo"),
     buscar: Optional[str] = Query(None, description="Buscar por nombre o abreviatura"),
+    ordenar_por: Optional[str] = Query("nombre", description="Campo por el cual ordenar"),
+    orden: Optional[str] = Query("asc", enum=["asc", "desc"]),
     db: Session = Depends(get_db)
 ):
-    query = db.query(Unidades_de_medida)
+    # Query base con conteo de productos
+    query = db.query(
+        Unidades_de_medida,
+        func.count(Productos.ID_Producto).label('productos_count')
+    ).outerjoin(
+        Productos, and_(
+            Productos.ID_Unidad_de_medida == Unidades_de_medida.ID_Unidad_de_medida,
+            Productos.Activo == True
+        )
+    ).group_by(
+        Unidades_de_medida.ID_Unidad_de_medida,
+        Unidades_de_medida.Nombre,
+        Unidades_de_medida.Abreviatura,
+        Unidades_de_medida.Activo
+    )
     
+    # Aplicar filtros
     if activo is not None:
         query = query.filter(Unidades_de_medida.Activo == activo)
     if buscar:
@@ -39,80 +56,189 @@ async def get_unidades_medida(
             (Unidades_de_medida.Abreviatura.ilike(search))
         )
     
-    total = query.count()
-    unidades = query.offset(skip).limit(limit).all()
+    # Contar total de registros
+    total = db.query(func.count(Unidades_de_medida.ID_Unidad_de_medida)).scalar()
+    
+    # Aplicar ordenamiento
+    if ordenar_por == "nombre":
+        if orden == "desc":
+            query = query.order_by(Unidades_de_medida.Nombre.desc())
+        else:
+            query = query.order_by(Unidades_de_medida.Nombre.asc())
+    elif ordenar_por == "abreviatura":
+        if orden == "desc":
+            query = query.order_by(Unidades_de_medida.Abreviatura.desc())
+        else:
+            query = query.order_by(Unidades_de_medida.Abreviatura.asc())
+    else:
+        query = query.order_by(Unidades_de_medida.Nombre.asc())
+    
+    # Aplicar paginación
+    resultados = query.offset(skip).limit(limit).all()
+    
+    # Procesar resultados
+    unidades_procesadas = []
+    for unidad, productos_count in resultados:
+        unidad_dict = {
+            "id_unidad_medida": unidad.ID_Unidad_de_medida,
+            "nombre": unidad.Nombre,
+            "abreviatura": unidad.Abreviatura,
+            "activo": unidad.Activo,
+            "productos_count": productos_count
+        }
+        unidades_procesadas.append(unidad_dict)
     
     return {
-        "total": total,
-        "items": unidades,
-        "pagina": skip // limit + 1,
-        "paginas": (total + limit - 1) // limit
+        "total_registros": total,
+        "pagina_actual": skip // limit + 1,
+        "total_paginas": (total + limit - 1) // limit,
+        "unidades": unidades_procesadas
     }
 
-# Obtener una unidad por ID
-@router.get("/{unidad_id}", response_model=Unidad_de_medida_completa)
+# Obtener estadísticas de unidades de medida
+@router.get("/estadisticas", response_model=dict)
+async def get_estadisticas_unidades_medida(
+    db: Session = Depends(get_db)
+):
+    # Total de unidades
+    total_unidades = db.query(func.count(Unidades_de_medida.ID_Unidad_de_medida)).scalar()
+    
+    # Unidades activas
+    unidades_activas = db.query(func.count(Unidades_de_medida.ID_Unidad_de_medida)).filter(
+        Unidades_de_medida.Activo == True
+    ).scalar()
+    
+    # Unidades más usadas
+    unidades_productos = db.query(
+        Unidades_de_medida.ID_Unidad_de_medida,
+        Unidades_de_medida.Nombre,
+        Unidades_de_medida.Abreviatura,
+        func.count(Productos.ID_Producto).label('total_productos')
+    ).join(
+        Productos, and_(
+            Productos.ID_Unidad_de_medida == Unidades_de_medida.ID_Unidad_de_medida,
+            Productos.Activo == True
+        )
+    ).group_by(
+        Unidades_de_medida.ID_Unidad_de_medida,
+        Unidades_de_medida.Nombre,
+        Unidades_de_medida.Abreviatura
+    ).order_by(
+        func.count(Productos.ID_Producto).desc()
+    ).limit(5).all()
+    
+    return {
+        "total_unidades": total_unidades,
+        "unidades_activas": unidades_activas,
+        "unidades_mas_usadas": [
+            {
+                "id": unidad.ID_Unidad_de_medida,
+                "nombre": unidad.Nombre,
+                "abreviatura": unidad.Abreviatura,
+                "total_productos": unidad.total_productos
+            }
+            for unidad in unidades_productos
+        ]
+    }
+
+# Obtener una unidad de medida por ID
+@router.get("/{unidad_id}", response_model=UnidadMedidaCompleta)
 async def get_unidad_medida(
     unidad_id: int = Path(..., gt=0, description="ID de la unidad de medida"),
     db: Session = Depends(get_db)
 ):
-    unidad = db.query(Unidades_de_medida).filter(Unidades_de_medida.ID_Unidad_de_medida == unidad_id).first()
-    if not unidad:
+    # Query con conteo de productos
+    result = db.query(
+        Unidades_de_medida,
+        func.count(Productos.ID_Producto).label('productos_count')
+    ).outerjoin(
+        Productos, and_(
+            Productos.ID_Unidad_de_medida == Unidades_de_medida.ID_Unidad_de_medida,
+            Productos.Activo == True
+        )
+    ).filter(
+        Unidades_de_medida.ID_Unidad_de_medida == unidad_id
+    ).group_by(
+        Unidades_de_medida.ID_Unidad_de_medida,
+        Unidades_de_medida.Nombre,
+        Unidades_de_medida.Abreviatura,
+        Unidades_de_medida.Activo
+    ).first()
+    
+    if not result:
         raise HTTPException(status_code=404, detail="Unidad de medida no encontrada")
-    return unidad
+    
+    unidad, productos_count = result
+    
+    return {
+        "id_unidad_medida": unidad.ID_Unidad_de_medida,
+        "nombre": unidad.Nombre,
+        "abreviatura": unidad.Abreviatura,
+        "activo": unidad.Activo,
+        "productos_count": productos_count
+    }
 
-# Crear nueva unidad
-@router.post("/", response_model=Unidad_de_medida_completa)
+# Crear nueva unidad de medida
+@router.post("/", response_model=UnidadMedidaCompleta)
 async def create_unidad_medida(
-    unidad: Unidad_de_medida_create,
+    unidad: UnidadMedidaCreate,
     db: Session = Depends(get_db)
 ):
-    # Verificar nombre único
-    existe_nombre = db.query(Unidades_de_medida).filter(Unidades_de_medida.Nombre == unidad.nombre).first()
-    if existe_nombre:
-        raise HTTPException(status_code=400, detail="Ya existe una unidad con este nombre")
+    # Verificar si ya existe una unidad con el mismo nombre o abreviatura
+    existe = db.query(Unidades_de_medida).filter(
+        (Unidades_de_medida.Nombre == unidad.nombre) |
+        (Unidades_de_medida.Abreviatura == unidad.abreviatura)
+    ).first()
+    if existe:
+        raise HTTPException(
+            status_code=400,
+            detail="Ya existe una unidad de medida con este nombre o abreviatura"
+        )
     
-    # Verificar abreviatura única
-    existe_abrev = db.query(Unidades_de_medida).filter(Unidades_de_medida.Abreviatura == unidad.abreviatura).first()
-    if existe_abrev:
-        raise HTTPException(status_code=400, detail="Ya existe una unidad con esta abreviatura")
-    
+    # Crear nueva unidad
     db_unidad = Unidades_de_medida(
         Nombre=unidad.nombre,
-        Abreviatura=unidad.abreviatura
+        Abreviatura=unidad.abreviatura,
+        Activo=unidad.activo
     )
     db.add(db_unidad)
     db.commit()
     db.refresh(db_unidad)
-    return db_unidad
+    
+    return {
+        "id_unidad_medida": db_unidad.ID_Unidad_de_medida,
+        "nombre": db_unidad.Nombre,
+        "abreviatura": db_unidad.Abreviatura,
+        "activo": db_unidad.Activo,
+        "productos_count": 0  # Nueva unidad, no tiene productos
+    }
 
-# Actualizar unidad
-@router.put("/{unidad_id}", response_model=Unidad_de_medida_completa)
+# Actualizar unidad de medida
+@router.put("/{unidad_id}", response_model=UnidadMedidaCompleta)
 async def update_unidad_medida(
-    unidad: Unidad_de_medida_update,
+    unidad: UnidadMedidaUpdate,
     unidad_id: int = Path(..., gt=0),
     db: Session = Depends(get_db)
 ):
-    db_unidad = db.query(Unidades_de_medida).filter(Unidades_de_medida.ID_Unidad_de_medida == unidad_id).first()
+    # Buscar unidad existente
+    db_unidad = db.query(Unidades_de_medida).filter(
+        Unidades_de_medida.ID_Unidad_de_medida == unidad_id
+    ).first()
     if not db_unidad:
         raise HTTPException(status_code=404, detail="Unidad de medida no encontrada")
     
-    # Verificar nombre único si se está actualizando
-    if unidad.nombre:
-        existe_nombre = db.query(Unidades_de_medida).filter(
-            Unidades_de_medida.Nombre == unidad.nombre,
-            Unidades_de_medida.ID_Unidad_de_medida != unidad_id
+    # Verificar nombre y abreviatura únicos
+    if unidad.nombre or unidad.abreviatura:
+        existe = db.query(Unidades_de_medida).filter(
+            (Unidades_de_medida.ID_Unidad_de_medida != unidad_id) &
+            ((Unidades_de_medida.Nombre == unidad.nombre) |
+             (Unidades_de_medida.Abreviatura == unidad.abreviatura))
         ).first()
-        if existe_nombre:
-            raise HTTPException(status_code=400, detail="Ya existe una unidad con este nombre")
-    
-    # Verificar abreviatura única si se está actualizando
-    if unidad.abreviatura:
-        existe_abrev = db.query(Unidades_de_medida).filter(
-            Unidades_de_medida.Abreviatura == unidad.abreviatura,
-            Unidades_de_medida.ID_Unidad_de_medida != unidad_id
-        ).first()
-        if existe_abrev:
-            raise HTTPException(status_code=400, detail="Ya existe una unidad con esta abreviatura")
+        if existe:
+            raise HTTPException(
+                status_code=400,
+                detail="Ya existe una unidad de medida con este nombre o abreviatura"
+            )
     
     # Actualizar campos
     for key, value in unidad.dict(exclude_unset=True).items():
@@ -120,20 +246,36 @@ async def update_unidad_medida(
     
     db.commit()
     db.refresh(db_unidad)
-    return db_unidad
+    
+    # Obtener conteo de productos
+    productos_count = db.query(func.count(Productos.ID_Producto)).filter(
+        Productos.ID_Unidad_de_medida == unidad_id,
+        Productos.Activo == True
+    ).scalar()
+    
+    return {
+        "id_unidad_medida": db_unidad.ID_Unidad_de_medida,
+        "nombre": db_unidad.Nombre,
+        "abreviatura": db_unidad.Abreviatura,
+        "activo": db_unidad.Activo,
+        "productos_count": productos_count
+    }
 
-# Eliminar unidad (soft delete si tiene productos asociados)
+# Eliminar unidad de medida (soft delete)
 @router.delete("/{unidad_id}")
 async def delete_unidad_medida(
     unidad_id: int = Path(..., gt=0),
     db: Session = Depends(get_db)
 ):
-    db_unidad = db.query(Unidades_de_medida).filter(Unidades_de_medida.ID_Unidad_de_medida == unidad_id).first()
+    # Buscar unidad
+    db_unidad = db.query(Unidades_de_medida).filter(
+        Unidades_de_medida.ID_Unidad_de_medida == unidad_id
+    ).first()
     if not db_unidad:
         raise HTTPException(status_code=404, detail="Unidad de medida no encontrada")
     
     # Verificar si tiene productos asociados
-    tiene_productos = db.query(func.count()).select_from(Productos).filter(
+    tiene_productos = db.query(func.count(Productos.ID_Producto)).filter(
         Productos.ID_Unidad_de_medida == unidad_id
     ).scalar()
     
@@ -147,39 +289,3 @@ async def delete_unidad_medida(
         db.delete(db_unidad)
         db.commit()
         return {"message": "Unidad de medida eliminada"}
-
-# Obtener estadísticas
-@router.get("/estadisticas", response_model=dict)
-async def get_estadisticas_unidades(
-    db: Session = Depends(get_db)
-):
-    total = db.query(func.count(Unidades_de_medida.ID_Unidad_de_medida)).scalar()
-    activas = db.query(func.count(Unidades_de_medida.ID_Unidad_de_medida)).filter(
-        Unidades_de_medida.Activo == True
-    ).scalar()
-    
-    # Unidades más usadas
-    mas_usadas = db.query(
-        Unidades_de_medida.ID_Unidad_de_medida,
-        Unidades_de_medida.Nombre,
-        Unidades_de_medida.Abreviatura,
-        func.count(Productos.ID_Producto).label('total_productos')
-    ).join(Productos).group_by(
-        Unidades_de_medida.ID_Unidad_de_medida,
-        Unidades_de_medida.Nombre,
-        Unidades_de_medida.Abreviatura
-    ).order_by(func.count(Productos.ID_Producto).desc()).limit(5).all()
-    
-    return {
-        "total_unidades": total,
-        "unidades_activas": activas,
-        "mas_usadas": [
-            {
-                "id": u.ID_Unidad_de_medida,
-                "nombre": u.Nombre,
-                "abreviatura": u.Abreviatura,
-                "total_productos": u.total_productos
-            }
-            for u in mas_usadas
-        ]
-    }
