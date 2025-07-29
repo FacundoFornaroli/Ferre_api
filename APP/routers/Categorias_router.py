@@ -278,7 +278,8 @@ async def update_categoria(
         Categorias.Nombre,
         Categorias.Descripcion,
         Categorias.Categoria_Padre,
-        Categorias.Activo
+        Categorias.Activo,
+        Categorias.Fecha_Creacion
     ).all()
 
     for subcat, subcat_productos_count in db_subcategorias:
@@ -288,6 +289,7 @@ async def update_categoria(
             "descripcion": subcat.Descripcion,
             "categoria_padre": subcat.Categoria_Padre,
             "activo": subcat.Activo,
+            "fecha_creacion": subcat.Fecha_Creacion,
             "productos_count": subcat_productos_count
         })
 
