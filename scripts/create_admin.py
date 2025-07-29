@@ -2,6 +2,7 @@ import pyodbc
 from passlib.context import CryptContext
 from datetime import datetime
 import os
+import urllib.parse
 
 # Configuración de hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -22,8 +23,8 @@ def create_admin_user():
         "Actualizado_el": datetime.now()
     }
     
-    # Conexión directa a SQL Server
-    conn_str = "DRIVER={ODBC Driver 17 for SQL Server};SERVER=localhost;DATABASE=Ferreteriadb;UID=sa;PWD=12345"
+    # Usar la misma configuración que la aplicación principal
+    conn_str = "Driver={ODBC Driver 17 for SQL Server};Server=localhost;Database=Ferreteriadb;UID=sa;PWD=12345"
     
     try:
         conn = pyodbc.connect(conn_str)
@@ -67,6 +68,9 @@ def create_admin_user():
         
         conn.commit()
         print("Proceso completado exitosamente")
+        print(f"Credenciales de administrador:")
+        print(f"Email: {admin_data['Email']}")
+        print(f"Contraseña: {admin_data['Contraseña']}")
         
     except Exception as e:
         print(f"Error: {e}")
