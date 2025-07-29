@@ -1,27 +1,28 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, CheckConstraint, Numeric, Text, Index
-from database import Base 
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, CheckConstraint, Numeric, Text, Index
 from sqlalchemy.orm import relationship
+from database import Base
 from datetime import datetime
 
 class Movimientos_inventario(Base):
     __tablename__ = "Movimientos_inventario"
     
     ID_Movimiento = Column(Integer, primary_key=True, index=True)
-    ID_Producto = Column(Integer, ForeignKey('Productos.ID_Producto'), nullable=False, index=True)
-    ID_Sucursal = Column(Integer, ForeignKey('Sucursales.ID_Sucursal'), nullable=False, index=True)
-    Fecha = Column(DateTime, nullable=False, default=datetime.now, index=True)
-    Tipo = Column(String(15), nullable=False, index=True)
+    ID_Producto = Column(Integer, ForeignKey('Productos.ID_Producto'), nullable=False)
+    ID_Sucursal = Column(Integer, ForeignKey('Sucursales.ID_Sucursal'), nullable=False)
+    Fecha = Column(DateTime, nullable=False, default=datetime.now)
+    Tipo = Column(String(15), nullable=False)  # 'Compra', 'Venta', 'Transferencia', 'Ajuste', 'Devolucion'
     Cantidad = Column(Integer, nullable=False)
-    Costo_Unitario = Column(Numeric(10, 2), nullable=True)
-    ID_Usuario = Column(Integer, ForeignKey('Usuarios.ID_Usuario'), nullable=False, index=True)
-    ID_Referencia = Column(Integer, nullable=True)
-    Tipo_Referencia = Column(String(20), nullable=True)
-    Observaciones = Column(Text, nullable=True)
+    Costo_Unitario = Column(Numeric(10, 2))
+    ID_Usuario = Column(Integer, ForeignKey('Usuarios.ID_Usuario'), nullable=False)
+    ID_Referencia = Column(Integer)  # ID de la factura, OC, transferencia, etc.
+    Tipo_Referencia = Column(String(20))  # 'Factura', 'OC', 'Transferencia', etc.
+    Observaciones = Column(Text)
 
     # Relaciones
     producto = relationship("Productos", back_populates="movimientos_inventario")
     sucursal = relationship("Sucursales", back_populates="movimientos_inventario")
     usuario = relationship("Usuarios", back_populates="movimientos_inventario")
+    inventario = relationship("Inventario", back_populates="movimientos")
 
     __table_args__ = (
         CheckConstraint("Tipo IN ('Compra', 'Venta', 'Transferencia', 'Ajuste', 'Devolucion')", 
@@ -34,5 +35,5 @@ class Movimientos_inventario(Base):
     )
 
     def __repr__(self):
-        return f"<Movimientos_inventario(ID_Movimiento={self.ID_Movimiento}, ID_Producto={self.ID_Producto}, ID_Sucursal={self.ID_Sucursal}, Fecha={self.Fecha}, Tipo={self.Tipo}, Cantidad={self.Cantidad}, Costo_Unitario={self.Costo_Unitario}, ID_Usuario={self.ID_Usuario}, ID_Referencia={self.ID_Referencia}, Tipo_Referencia={self.Tipo_Referencia}, Observaciones={self.Observaciones})>"
+        return f"<Movimiento_inventario(ID_Movimiento={self.ID_Movimiento}, Tipo='{self.Tipo}', Cantidad={self.Cantidad})>"
         
