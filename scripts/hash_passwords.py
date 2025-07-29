@@ -24,7 +24,7 @@ def create_admin_user(db):
         "Contraseña": "admin123",
         "Nombre": "Juan",
         "Apellido": "González",
-        "Rol": "admin",
+        "Rol": "admin",  # En minúsculas
         "Estado": True,
         "Creado_el": datetime.now(),
         "Actualizado_el": datetime.now()
@@ -49,10 +49,11 @@ def create_admin_user(db):
         db.commit()
         print("Usuario administrador creado exitosamente")
     else:
-        # Actualizar contraseña del admin existente
+        # Actualizar admin existente
         admin.Contraseña = hash_password(admin_data["Contraseña"])
+        admin.Rol = admin_data["Rol"]  # Asegurar que el rol esté en minúsculas
         db.commit()
-        print("Contraseña del administrador actualizada exitosamente")
+        print("Usuario administrador actualizado exitosamente")
 
 def main():
     # Crear conexión a la base de datos

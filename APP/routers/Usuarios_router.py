@@ -28,10 +28,14 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 30
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="usuarios/login")
 
-router = APIRouter(
-    prefix="/usuarios",
-    tags=["Usuarios"]
-)
+# Roles permitidos
+ROLES_PERMITIDOS = {
+    "admin": ["admin"],
+    "gerente": ["admin", "gerente"],
+    "vendedor": ["admin", "gerente", "vendedor"],
+    "almacen": ["admin", "gerente", "almacen"],
+    "contador": ["admin", "gerente", "contador"]
+}
 
 def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
@@ -73,6 +77,28 @@ async def get_current_user(
             detail="Usuario inactivo"
         )
     return user
+
+async def check_admin_role(current_user: Usuarios = Depends(get_current_user)):
+    if current_user.Rol.lower() != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="No tiene permisos para esta acción"
+        )
+    return current_user
+
+async def check_role_permission(required_role: str, current_user: Usuarios = Depends(get_current_user)):
+    user_role = current_user.Rol.lower()
+    if user_role not in ROLES_PERMITIDOS.get(required_role, []):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="No tiene permisos para esta acción"
+        )
+    return current_user
+
+router = APIRouter(
+    prefix="/usuarios",
+    tags=["Usuarios"]
+)
 
 @router.post("/login", response_model=Token)
 async def login(
@@ -165,20 +191,21 @@ async def login(
 # Obtener todos los usuarios con paginación y filtros
 @router.get("/", response_model=UsuarioList)
 async def get_usuarios(
-    skip: int = Query(0, ge=0),
-    limit: int = Query(10, ge=1, le=100),
-    estado: Optional[bool] = None,
-    rol: Optional[str] = None,
-    sucursal_id: Optional[int] = None,
-    buscar: Optional[str] = None,
-    current_user: Usuarios = Depends(get_current_user),
+    skip: int = Query(0, ge=0, description="Número de registros a saltar"),
+    limit: int = Query(10, ge=1, le=100, description="Número de registros a retornar"),
+    estado: Optional[bool] = Query(None, description="Filtrar por estado activo/inactivo"),
+    rol: Optional[str] = Query(None, description="Filtrar por rol"),
+    sucursal_id: Optional[int] = Query(None, description="Filtrar por sucursal"),
+    buscar: Optional[str] = Query(None, description="Buscar por nombre, apellido o email"),
+    ordenar_por: Optional[str] = Query("nombre", description="Campo por el cual ordenar"),
+    orden: Optional[str] = Query("asc", enum=["asc", "desc"]),
+    current_user: Usuarios = Depends(check_admin_role),
     db: Session = Depends(get_db)
 ):
-    if current_user.Rol not in ["Admin", "Supervisor"]:
-        raise HTTPException(status_code=403, detail="No tiene permisos para esta acción")
-    
+    # Query base
     query = db.query(Usuarios)
     
+    # Aplicar filtros
     if estado is not None:
         query = query.filter(Usuarios.Estado == estado)
     if rol:
@@ -188,19 +215,62 @@ async def get_usuarios(
     if buscar:
         search = f"%{buscar}%"
         query = query.filter(
-            (Usuarios.Nombre.ilike(search)) |
-            (Usuarios.Apellido.ilike(search)) |
-            (Usuarios.Email.ilike(search))
+            or_(
+                Usuarios.Nombre.ilike(search),
+                Usuarios.Apellido.ilike(search),
+                Usuarios.Email.ilike(search)
+            )
         )
     
+    # Contar total de registros
     total = query.count()
+    
+    # Aplicar ordenamiento
+    if ordenar_por == "nombre":
+        if orden == "desc":
+            query = query.order_by(Usuarios.Nombre.desc(), Usuarios.ID_Usuario.asc())
+        else:
+            query = query.order_by(Usuarios.Nombre.asc(), Usuarios.ID_Usuario.asc())
+    elif ordenar_por == "email":
+        if orden == "desc":
+            query = query.order_by(Usuarios.Email.desc(), Usuarios.ID_Usuario.asc())
+        else:
+            query = query.order_by(Usuarios.Email.asc(), Usuarios.ID_Usuario.asc())
+    elif ordenar_por == "rol":
+        if orden == "desc":
+            query = query.order_by(Usuarios.Rol.desc(), Usuarios.ID_Usuario.asc())
+        else:
+            query = query.order_by(Usuarios.Rol.asc(), Usuarios.ID_Usuario.asc())
+    else:
+        query = query.order_by(Usuarios.ID_Usuario.asc())
+    
+    # Aplicar paginación
     usuarios = query.offset(skip).limit(limit).all()
     
+    # Procesar resultados
+    usuarios_procesados = []
+    for usuario in usuarios:
+        sucursal_nombre = None
+        if usuario.ID_Sucursal:
+            sucursal = db.query(Sucursales).filter(Sucursales.ID_Sucursal == usuario.ID_Sucursal).first()
+            if sucursal:
+                sucursal_nombre = sucursal.Nombre
+        
+        usuarios_procesados.append({
+            "id_usuario": usuario.ID_Usuario,
+            "nombre": usuario.Nombre,
+            "apellido": usuario.Apellido,
+            "email": usuario.Email,
+            "rol": usuario.Rol,
+            "estado": usuario.Estado,
+            "sucursal": sucursal_nombre
+        })
+    
     return {
-        "total": total,
-        "items": usuarios,
-        "pagina": skip // limit + 1,
-        "paginas": (total + limit - 1) // limit
+        "total_registros": total,
+        "pagina_actual": skip // limit + 1,
+        "total_paginas": (total + limit - 1) // limit,
+        "usuarios": usuarios_procesados
     }
 
 # Obtener un usuario por ID
@@ -222,6 +292,7 @@ async def get_usuario(
 @router.post("/", response_model=UsuarioCompleta)
 async def create_usuario(
     usuario: UsuarioCreate,
+    current_user: Usuarios = Depends(check_admin_role),
     db: Session = Depends(get_db)
 ):
     # Verificar si ya existe un usuario con el mismo email
@@ -298,7 +369,7 @@ async def create_usuario(
 async def update_usuario(
     usuario: UsuarioUpdate,
     usuario_id: int = Path(..., gt=0),
-    current_user: Usuarios = Depends(get_current_user),
+    current_user: Usuarios = Depends(check_admin_role),
     db: Session = Depends(get_db)
 ):
     # Verificar permisos
@@ -358,7 +429,7 @@ async def update_usuario(
 async def change_usuario_estado(
     usuario_id: int = Path(..., gt=0),
     estado: bool = Query(..., description="Nuevo estado del usuario"),
-    current_user: Usuarios = Depends(get_current_user),
+    current_user: Usuarios = Depends(check_admin_role),
     db: Session = Depends(get_db)
 ):
     if current_user.Rol != "Admin":
