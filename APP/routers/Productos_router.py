@@ -85,6 +85,57 @@ async def get_productos(
         "paginas": (total + limit - 1) // limit
     }
 
+# Buscar productos por código de barras
+@router.get("/buscar/{codigo}", response_model=ProductoSimple)
+async def buscar_por_codigo(
+    codigo: str,
+    db: Session = Depends(get_db)
+):
+    producto = db.query(Productos).filter(
+        (Productos.Codigo_Barras == codigo) |
+        (Productos.SKU == codigo)
+    ).first()
+    
+    if not producto:
+        raise HTTPException(status_code=404, detail="Producto no encontrado")
+    return producto
+
+# Obtener productos con stock bajo
+@router.get("/reportes/stock-bajo", response_model=List[dict])
+async def get_productos_stock_bajo(
+    limite: int = Query(10, ge=1, le=100),
+    sucursal_id: Optional[int] = None,
+    db: Session = Depends(get_db)
+):
+    query = db.query(
+        Productos.ID_Producto,
+        Productos.Nombre,
+        Productos.Codigo_Barras,
+        Inventario.ID_Sucursal,
+        Inventario.Stock_Actual,
+        Inventario.Stock_Minimo
+    ).join(Inventario).filter(
+        Inventario.Stock_Actual <= Inventario.Stock_Minimo
+    )
+    
+    if sucursal_id:
+        query = query.filter(Inventario.ID_Sucursal == sucursal_id)
+    
+    productos = query.limit(limite).all()
+    
+    return [
+        {
+            "id": p.ID_Producto,
+            "nombre": p.Nombre,
+            "codigo_barras": p.Codigo_Barras,
+            "sucursal_id": p.ID_Sucursal,
+            "stock_actual": p.Stock_Actual,
+            "stock_minimo": p.Stock_Minimo,
+            "faltante": p.Stock_Minimo - p.Stock_Actual
+        }
+        for p in productos
+    ]
+
 # Obtener un producto por ID
 @router.get("/{producto_id}", response_model=ProductoCompleta)
 async def get_producto(
