@@ -259,7 +259,8 @@ async def get_usuario(
     current_user: Usuarios = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    if current_user.Rol not in ["Admin", "Supervisor"] and current_user.ID_Usuario != usuario_id:
+    # Permitir acceso si es admin o si está consultando su propio perfil
+    if current_user.Rol.lower() not in ["admin", "supervisor"] and current_user.ID_Usuario != usuario_id:
         raise HTTPException(status_code=403, detail="No tiene permisos para esta acción")
     
     usuario = db.query(Usuarios).filter(Usuarios.ID_Usuario == usuario_id).first()
