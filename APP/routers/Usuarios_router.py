@@ -473,7 +473,7 @@ async def get_estadisticas_usuarios(
     current_user: Usuarios = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    if current_user.Rol not in ["Admin", "Supervisor"]:
+    if current_user.Rol.lower() not in ["admin", "supervisor"]:
         raise HTTPException(status_code=403, detail="No tiene permisos para esta acción")
     
     total = db.query(func.count(Usuarios.ID_Usuario)).scalar()
