@@ -66,6 +66,78 @@ async def get_facturas(
         "paginas": (total + limit - 1) // limit
     }
 
+# Obtener estadísticas de ventas
+@router.get("/estadisticas", response_model=dict)
+async def get_estadisticas_ventas(
+    desde: Optional[datetime] = None,
+    hasta: Optional[datetime] = None,
+    sucursal_id: Optional[int] = None,
+    db: Session = Depends(get_db),
+    current_user: Usuarios = Depends(get_current_user)
+):
+    if current_user.Rol.lower() not in ["admin", "supervisor"]:
+        raise HTTPException(status_code=403, detail="No tiene permisos para esta acción")
+    
+    query = db.query(Facturas_Venta).filter(Facturas_Venta.Estado != "Anulada")
+    
+    if desde:
+        query = query.filter(Facturas_Venta.Fecha >= desde)
+    if hasta:
+        query = query.filter(Facturas_Venta.Fecha <= hasta)
+    if sucursal_id:
+        query = query.filter(Facturas_Venta.ID_Sucursal == sucursal_id)
+    
+    # Totales generales
+    total_facturas = query.count()
+    total_ventas = query.with_entities(func.sum(Facturas_Venta.Total)).scalar() or 0
+    
+    # Por tipo de factura
+    por_tipo = db.query(
+        Facturas_Venta.Tipo_Factura,
+        func.count(Facturas_Venta.ID_Factura_Venta).label('cantidad'),
+        func.sum(Facturas_Venta.Total).label('total')
+    ).filter(
+        Facturas_Venta.Estado != "Anulada"
+    ).group_by(Facturas_Venta.Tipo_Factura).all()
+    
+    # Por sucursal
+    por_sucursal = db.query(
+        Sucursales.Nombre,
+        func.count(Facturas_Venta.ID_Factura_Venta).label('cantidad'),
+        func.sum(Facturas_Venta.Total).label('total')
+    ).join(Facturas_Venta).filter(
+        Facturas_Venta.Estado != "Anulada"
+    ).group_by(Sucursales.Nombre).all()
+    
+    # Promedio por factura
+    promedio_factura = total_ventas / total_facturas if total_facturas > 0 else 0
+    
+    return {
+        "total_facturas": total_facturas,
+        "total_ventas": float(total_ventas),
+        "promedio_factura": float(promedio_factura),
+        "por_tipo": [
+            {
+                "tipo": p.Tipo_Factura,
+                "cantidad": p.cantidad,
+                "total": float(p.total)
+            }
+            for p in por_tipo
+        ],
+        "por_sucursal": [
+            {
+                "sucursal": p.Nombre,
+                "cantidad": p.cantidad,
+                "total": float(p.total)
+            }
+            for p in por_sucursal
+        ],
+        "periodo": {
+            "desde": desde,
+            "hasta": hasta
+        }
+    }
+
 # Obtener una factura por ID
 @router.get("/{factura_id}", response_model=FacturaVentaCompleta)
 async def get_factura(
