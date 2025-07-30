@@ -252,6 +252,62 @@ async def get_usuarios(
         "usuarios": usuarios_procesados
     }
 
+# Obtener estadísticas de usuarios
+@router.get("/estadisticas", response_model=dict)
+async def get_estadisticas_usuarios(
+    current_user: Usuarios = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    if current_user.Rol.lower() not in ["admin", "supervisor"]:
+        raise HTTPException(status_code=403, detail="No tiene permisos para esta acción")
+    
+    total = db.query(func.count(Usuarios.ID_Usuario)).scalar()
+    activos = db.query(func.count(Usuarios.ID_Usuario)).filter(Usuarios.Estado == True).scalar()
+    
+    # Usuarios por rol
+    por_rol = db.query(
+        Usuarios.Rol,
+        func.count(Usuarios.ID_Usuario).label('total')
+    ).group_by(Usuarios.Rol).all()
+    
+    # Usuarios por sucursal
+    por_sucursal = db.query(
+        Sucursales.ID_Sucursal,
+        Sucursales.Nombre,
+        func.count(Usuarios.ID_Usuario).label('total_usuarios')
+    ).join(Usuarios).group_by(
+        Sucursales.ID_Sucursal,
+        Sucursales.Nombre
+    ).all()
+    
+    # Últimos accesos
+    ultimos_accesos = db.query(
+        func.count(Usuarios.ID_Usuario).label('total'),
+        func.sum(case((Usuarios.Ultimo_Acceso >= datetime.now() - timedelta(days=7), 1), else_=0)).label('ultima_semana'),
+        func.sum(case((Usuarios.Ultimo_Acceso >= datetime.now() - timedelta(days=30), 1), else_=0)).label('ultimo_mes')
+    ).first()
+    
+    return {
+        "total_usuarios": total,
+        "usuarios_activos": activos,
+        "por_rol": [
+            {"rol": r.Rol, "total": r.total}
+            for r in por_rol
+        ],
+        "por_sucursal": [
+            {
+                "id": s.ID_Sucursal,
+                "nombre": s.Nombre,
+                "total_usuarios": s.total_usuarios
+            }
+            for s in por_sucursal
+        ],
+        "accesos": {
+            "ultima_semana": ultimos_accesos.ultima_semana or 0,
+            "ultimo_mes": ultimos_accesos.ultimo_mes or 0
+        }
+    }
+
 # Obtener un usuario por ID
 @router.get("/{usuario_id}", response_model=UsuarioCompleta)
 async def get_usuario(
