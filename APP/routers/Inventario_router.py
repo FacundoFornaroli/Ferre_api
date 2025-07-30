@@ -100,6 +100,90 @@ async def get_inventario(
         "paginas": (total + limit - 1) // limit
     }
 
+# Obtener resumen de inventario por sucursal
+@router.get("/sucursal/{sucursal_id}/resumen", response_model=dict)
+async def get_resumen_sucursal(
+    sucursal_id: int = Path(..., gt=0),
+    db: Session = Depends(get_db),
+    current_user: Usuarios = Depends(get_current_user)
+):
+    # Verificar sucursal
+    sucursal = db.query(Sucursales).filter(Sucursales.ID_Sucursal == sucursal_id).first()
+    if not sucursal:
+        raise HTTPException(status_code=404, detail="Sucursal no encontrada")
+    
+    # Total de productos en inventario
+    total_productos = db.query(func.count(Inventario.ID_Inventario)).filter(
+        Inventario.ID_Sucursal == sucursal_id,
+        Inventario.Activo == True
+    ).scalar()
+    
+    # Productos con stock bajo
+    productos_stock_bajo = db.query(func.count(Inventario.ID_Inventario)).filter(
+        Inventario.ID_Sucursal == sucursal_id,
+        Inventario.Stock_Actual <= Inventario.Stock_Minimo,
+        Inventario.Activo == True
+    ).scalar()
+    
+    # Productos sin stock
+    productos_sin_stock = db.query(func.count(Inventario.ID_Inventario)).filter(
+        Inventario.ID_Sucursal == sucursal_id,
+        Inventario.Stock_Actual == 0,
+        Inventario.Activo == True
+    ).scalar()
+    
+    # Valor total del inventario
+    valor_total = db.query(
+        func.sum(Inventario.Stock_Actual * Productos.Precio)
+    ).join(
+        Productos, Inventario.ID_Producto == Productos.ID_Producto
+    ).filter(
+        Inventario.ID_Sucursal == sucursal_id,
+        Inventario.Activo == True,
+        Productos.Activo == True
+    ).scalar() or 0
+    
+    # Productos más vendidos (últimos 30 días)
+    productos_mas_vendidos = db.query(
+        Productos.Nombre,
+        func.sum(Detalles_Factura_Venta.Cantidad).label('cantidad_vendida')
+    ).join(
+        Inventario, Productos.ID_Producto == Inventario.ID_Producto
+    ).join(
+        Detalles_Factura_Venta, Productos.ID_Producto == Detalles_Factura_Venta.ID_Producto
+    ).join(
+        Facturas_Venta, Detalles_Factura_Venta.ID_Factura_Venta == Facturas_Venta.ID_Factura_Venta
+    ).filter(
+        Inventario.ID_Sucursal == sucursal_id,
+        Facturas_Venta.Fecha >= datetime.now() - timedelta(days=30),
+        Facturas_Venta.Estado != "Anulada"
+    ).group_by(
+        Productos.ID_Producto,
+        Productos.Nombre
+    ).order_by(
+        func.sum(Detalles_Factura_Venta.Cantidad).desc()
+    ).limit(5).all()
+    
+    return {
+        "sucursal": {
+            "id": sucursal.ID_Sucursal,
+            "nombre": sucursal.Nombre
+        },
+        "resumen": {
+            "total_productos": total_productos,
+            "productos_stock_bajo": productos_stock_bajo,
+            "productos_sin_stock": productos_sin_stock,
+            "valor_total_inventario": float(valor_total)
+        },
+        "productos_mas_vendidos": [
+            {
+                "nombre": p.Nombre,
+                "cantidad_vendida": p.cantidad_vendida
+            }
+            for p in productos_mas_vendidos
+        ]
+    }
+
 # Obtener inventario por ID
 @router.get("/{inventario_id}", response_model=InventarioCompleta)
 async def get_inventario_by_id(
