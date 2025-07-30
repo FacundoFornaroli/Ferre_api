@@ -19,13 +19,7 @@ class Inventario(Base):
     # Relaciones
     producto = relationship("Productos", back_populates="inventarios")
     sucursal = relationship("Sucursales", back_populates="inventario")
-    movimientos = relationship(
-        "Movimientos_inventario",
-        primaryjoin="and_(foreign(Inventario.ID_Producto)==remote(Movimientos_inventario.ID_Producto), "
-                   "foreign(Inventario.ID_Sucursal)==remote(Movimientos_inventario.ID_Sucursal))",
-        back_populates="inventario",
-        viewonly=True
-    )
+    movimientos = relationship("Movimientos_inventario", back_populates="inventario")
 
     __table_args__ = (
         CheckConstraint('Stock_Minimo >= 0', name='CK_Inventario_Stock_Minimo'),
