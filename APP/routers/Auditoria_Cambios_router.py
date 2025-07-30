@@ -280,137 +280,39 @@ async def get_registro_auditoria(
     if not registro:
         raise HTTPException(status_code=404, detail="Registro de auditoría no encontrado")
     
-    # Procesar datos anteriores y nuevos
     try:
-        datos_anteriores = json.loads(registro.Auditoria_Cambios.Datos_Anteriores) if registro.Auditoria_Cambios.Datos_Anteriores else None
-        datos_nuevos = json.loads(registro.Auditoria_Cambios.Datos_Nuevos) if registro.Auditoria_Cambios.Datos_Nuevos else None
-        
-        # Calcular diferencias si ambos datos existen
-        diferencias = []
-        if datos_anteriores and datos_nuevos:
-            for key in set(datos_anteriores.keys()) | set(datos_nuevos.keys()):
-                valor_anterior = datos_anteriores.get(key)
-                valor_nuevo = datos_nuevos.get(key)
-                if valor_anterior != valor_nuevo:
-                    diferencias.append({
-                        "campo": key,
-                        "anterior": valor_anterior,
-                        "nuevo": valor_nuevo
-                    })
+        datos_anteriores = json.loads(registro.Auditoria_Cambios.Datos_Anteriores) if registro.Auditoria_Cambios.Datos_Anteriores else {}
+        datos_nuevos = json.loads(registro.Auditoria_Cambios.Datos_Nuevos) if registro.Auditoria_Cambios.Datos_Nuevos else {}
     except json.JSONDecodeError:
         datos_anteriores = registro.Auditoria_Cambios.Datos_Anteriores
         datos_nuevos = registro.Auditoria_Cambios.Datos_Nuevos
-        diferencias = None
+    
+    # Calcular diferencias si es un UPDATE
+    diferencias = {}
+    if registro.Auditoria_Cambios.Tipo_Operacion == "UPDATE" and isinstance(datos_anteriores, dict) and isinstance(datos_nuevos, dict):
+        for key in set(datos_anteriores.keys()) | set(datos_nuevos.keys()):
+            valor_anterior = datos_anteriores.get(key)
+            valor_nuevo = datos_nuevos.get(key)
+            if valor_anterior != valor_nuevo:
+                diferencias[key] = {
+                    "anterior": valor_anterior,
+                    "nuevo": valor_nuevo
+                }
     
     return {
-        "registro": {
-            "id_auditoria": registro.Auditoria_Cambios.ID_Auditoria,
-            "tabla": registro.Auditoria_Cambios.Tabla_Afectada,
-            "id_registro": registro.Auditoria_Cambios.ID_Registro,
-            "tipo_operacion": registro.Auditoria_Cambios.Tipo_Operacion,
-            "fecha": registro.Auditoria_Cambios.Fecha_Operacion,
-            "usuario": {
-                "id": registro.Auditoria_Cambios.ID_Usuario,
-                "nombre": f"{registro.nombre_usuario} {registro.apellido_usuario}"
-            },
-            "ip_cliente": registro.Auditoria_Cambios.IP_Cliente
+        "id_auditoria": registro.Auditoria_Cambios.ID_Auditoria,
+        "tabla_afectada": registro.Auditoria_Cambios.Tabla_Afectada,
+        "id_registro": registro.Auditoria_Cambios.ID_Registro,
+        "tipo_operacion": registro.Auditoria_Cambios.Tipo_Operacion,
+        "fecha": registro.Auditoria_Cambios.Fecha_Operacion,
+        "usuario": {
+            "id": registro.Auditoria_Cambios.ID_Usuario,
+            "nombre": f"{registro.nombre_usuario} {registro.apellido_usuario}"
         },
+        "ip_cliente": registro.Auditoria_Cambios.IP_Cliente,
         "datos": {
             "anteriores": datos_anteriores,
             "nuevos": datos_nuevos,
             "diferencias": diferencias
-        }
-    }
-
-
-        Auditoria_Cambios.Fecha_Operacion.between(desde, hasta)
-    ).group_by(
-        Auditoria_Cambios.Tabla_Afectada
-    ).all()
-    
-    # Cambios por tipo de operación
-    por_operacion = db.query(
-        Auditoria_Cambios.Tipo_Operacion,
-        func.count(Auditoria_Cambios.ID_Auditoria).label('total'),
-        func.count(distinct(Auditoria_Cambios.Tabla_Afectada)).label('tablas_afectadas')
-    ).filter(
-        Auditoria_Cambios.Fecha_Operacion.between(desde, hasta)
-    ).group_by(
-        Auditoria_Cambios.Tipo_Operacion
-    ).all()
-    
-    # Usuarios más activos
-    usuarios_activos = db.query(
-        Usuarios.ID_Usuario,
-        Usuarios.Nombre,
-        Usuarios.Apellido,
-        Usuarios.Rol,
-        func.count(Auditoria_Cambios.ID_Auditoria).label('total_cambios'),
-        func.count(distinct(Auditoria_Cambios.Tabla_Afectada)).label('tablas_diferentes')
-    ).join(
-        Auditoria_Cambios
-    ).filter(
-        Auditoria_Cambios.Fecha_Operacion.between(desde, hasta)
-    ).group_by(
-        Usuarios.ID_Usuario,
-        Usuarios.Nombre,
-        Usuarios.Apellido,
-        Usuarios.Rol
-    ).order_by(
-        func.count(Auditoria_Cambios.ID_Auditoria).desc()
-    ).limit(10).all()
-    
-    # Actividad por hora del día
-    por_hora = db.query(
-        func.extract('hour', Auditoria_Cambios.Fecha_Operacion).label('hora'),
-        func.count(Auditoria_Cambios.ID_Auditoria).label('total')
-    ).filter(
-        Auditoria_Cambios.Fecha_Operacion.between(desde, hasta)
-    ).group_by(
-        func.extract('hour', Auditoria_Cambios.Fecha_Operacion)
-    ).order_by(
-        'hora'
-    ).all()
-    
-    return {
-        "por_tabla": [
-            {
-                "tabla": t.Tabla_Afectada,
-                "total_cambios": t.total_cambios,
-                "registros_afectados": t.registros_afectados,
-                "usuarios_distintos": t.usuarios_distintos
-            }
-            for t in por_tabla
-        ],
-        "por_operacion": [
-            {
-                "tipo": o.Tipo_Operacion,
-                "total": o.total,
-                "tablas_afectadas": o.tablas_afectadas
-            }
-            for o in por_operacion
-        ],
-        "usuarios_activos": [
-            {
-                "usuario": {
-                    "id": u.ID_Usuario,
-                    "nombre": f"{u.Nombre} {u.Apellido}",
-                    "rol": u.Rol
-                },
-                "total_cambios": u.total_cambios,
-                "tablas_diferentes": u.tablas_diferentes
-            }
-            for u in usuarios_activos
-        ],
-        "actividad_horaria": [
-            {
-                "hora": h.hora,
-                "total": h.total
-            }
-            for h in por_hora
-        ],
-        "periodo": {
-            "desde": desde,
-            "hasta": hasta
         }
     }
