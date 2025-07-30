@@ -79,6 +79,184 @@ async def get_auditoria(
         "paginas": (total + limit - 1) // limit
     }
 
+# Buscar cambios por registro
+@router.get("/buscar", response_model=BusquedaAuditoria)
+async def buscar_cambios(
+    tabla: str = Query(..., description="Nombre de la tabla"),
+    id_registro: int = Query(..., gt=0, description="ID del registro a buscar"),
+    desde: Optional[datetime] = None,
+    hasta: Optional[datetime] = None,
+    db: Session = Depends(get_db),
+    current_user: Usuarios = Depends(get_current_user)
+):
+    if current_user.Rol not in ["Admin", "Supervisor"]:
+        raise HTTPException(status_code=403, detail="No tiene permisos para esta acción")
+    
+    query = db.query(
+        Auditoria_Cambios,
+        Usuarios.Nombre.label('nombre_usuario'),
+        Usuarios.Apellido.label('apellido_usuario')
+    ).join(
+        Usuarios
+    ).filter(
+        Auditoria_Cambios.Tabla_Afectada == tabla,
+        Auditoria_Cambios.ID_Registro == id_registro
+    )
+    
+    if desde:
+        query = query.filter(Auditoria_Cambios.Fecha_Operacion >= desde)
+    if hasta:
+        query = query.filter(Auditoria_Cambios.Fecha_Operacion <= hasta)
+    
+    cambios = query.order_by(Auditoria_Cambios.Fecha_Operacion).all()
+    
+    historial = []
+    estado_actual = {}
+    
+    for cambio in cambios:
+        try:
+            datos_anteriores = json.loads(cambio.Auditoria_Cambios.Datos_Anteriores) if cambio.Auditoria_Cambios.Datos_Anteriores else {}
+            datos_nuevos = json.loads(cambio.Auditoria_Cambios.Datos_Nuevos) if cambio.Auditoria_Cambios.Datos_Nuevos else {}
+            
+            # Actualizar estado actual
+            if cambio.Auditoria_Cambios.Tipo_Operacion == "INSERT":
+                estado_actual.update(datos_nuevos)
+            elif cambio.Auditoria_Cambios.Tipo_Operacion == "UPDATE":
+                estado_actual.update(datos_nuevos)
+            elif cambio.Auditoria_Cambios.Tipo_Operacion == "DELETE":
+                estado_actual = {}
+            
+            historial.append({
+                "id_auditoria": cambio.Auditoria_Cambios.ID_Auditoria,
+                "tipo_operacion": cambio.Auditoria_Cambios.Tipo_Operacion,
+                "fecha": cambio.Auditoria_Cambios.Fecha_Operacion,
+                "usuario": f"{cambio.nombre_usuario} {cambio.apellido_usuario}",
+                "datos_anteriores": datos_anteriores,
+                "datos_nuevos": datos_nuevos,
+                "ip_cliente": cambio.Auditoria_Cambios.IP_Cliente
+            })
+        except json.JSONDecodeError:
+            # Si no se puede parsear JSON, usar texto plano
+            historial.append({
+                "id_auditoria": cambio.Auditoria_Cambios.ID_Auditoria,
+                "tipo_operacion": cambio.Auditoria_Cambios.Tipo_Operacion,
+                "fecha": cambio.Auditoria_Cambios.Fecha_Operacion,
+                "usuario": f"{cambio.nombre_usuario} {cambio.apellido_usuario}",
+                "datos_anteriores": cambio.Auditoria_Cambios.Datos_Anteriores,
+                "datos_nuevos": cambio.Auditoria_Cambios.Datos_Nuevos,
+                "ip_cliente": cambio.Auditoria_Cambios.IP_Cliente
+            })
+    
+    return {
+        "tabla": tabla,
+        "id_registro": id_registro,
+        "estado_actual": estado_actual,
+        "historial": historial,
+        "total_cambios": len(historial)
+    }
+
+# Obtener estadísticas de auditoría
+@router.get("/estadisticas", response_model=EstadisticasAuditoria)
+async def get_estadisticas_auditoria(
+    desde: Optional[datetime] = None,
+    hasta: Optional[datetime] = None,
+    db: Session = Depends(get_db),
+    current_user: Usuarios = Depends(get_current_user)
+):
+    if current_user.Rol not in ["Admin", "Supervisor"]:
+        raise HTTPException(status_code=403, detail="No tiene permisos para esta acción")
+    
+    query = db.query(Auditoria_Cambios)
+    
+    if desde:
+        query = query.filter(Auditoria_Cambios.Fecha_Operacion >= desde)
+    if hasta:
+        query = query.filter(Auditoria_Cambios.Fecha_Operacion <= hasta)
+    
+    # Totales
+    total_registros = query.count()
+    
+    # Por tipo de operación
+    por_operacion = db.query(
+        Auditoria_Cambios.Tipo_Operacion,
+        func.count(Auditoria_Cambios.ID_Auditoria).label('cantidad')
+    ).filter(
+        *query.whereclause.clauses if query.whereclause else []
+    ).group_by(Auditoria_Cambios.Tipo_Operacion).all()
+    
+    # Por tabla
+    por_tabla = db.query(
+        Auditoria_Cambios.Tabla_Afectada,
+        func.count(Auditoria_Cambios.ID_Auditoria).label('cantidad')
+    ).filter(
+        *query.whereclause.clauses if query.whereclause else []
+    ).group_by(Auditoria_Cambios.Tabla_Afectada).order_by(
+        func.count(Auditoria_Cambios.ID_Auditoria).desc()
+    ).limit(10).all()
+    
+    # Por usuario
+    por_usuario = db.query(
+        Usuarios.Nombre,
+        Usuarios.Apellido,
+        func.count(Auditoria_Cambios.ID_Auditoria).label('cantidad')
+    ).join(Auditoria_Cambios).filter(
+        *query.whereclause.clauses if query.whereclause else []
+    ).group_by(
+        Usuarios.ID_Usuario,
+        Usuarios.Nombre,
+        Usuarios.Apellido
+    ).order_by(
+        func.count(Auditoria_Cambios.ID_Auditoria).desc()
+    ).limit(10).all()
+    
+    # Actividad por día (últimos 30 días)
+    actividad_diaria = db.query(
+        func.date(Auditoria_Cambios.Fecha_Operacion).label('fecha'),
+        func.count(Auditoria_Cambios.ID_Auditoria).label('cantidad')
+    ).filter(
+        Auditoria_Cambios.Fecha_Operacion >= datetime.now() - timedelta(days=30)
+    ).group_by(
+        func.date(Auditoria_Cambios.Fecha_Operacion)
+    ).order_by(
+        func.date(Auditoria_Cambios.Fecha_Operacion).desc()
+    ).all()
+    
+    return {
+        "total_registros": total_registros,
+        "por_operacion": [
+            {
+                "tipo": p.Tipo_Operacion,
+                "cantidad": p.cantidad
+            }
+            for p in por_operacion
+        ],
+        "por_tabla": [
+            {
+                "tabla": p.Tabla_Afectada,
+                "cantidad": p.cantidad
+            }
+            for p in por_tabla
+        ],
+        "por_usuario": [
+            {
+                "usuario": f"{p.Nombre} {p.Apellido}",
+                "cantidad": p.cantidad
+            }
+            for p in por_usuario
+        ],
+        "actividad_diaria": [
+            {
+                "fecha": p.fecha,
+                "cantidad": p.cantidad
+            }
+            for p in actividad_diaria
+        ],
+        "periodo": {
+            "desde": desde,
+            "hasta": hasta
+        }
+    }
+
 # Obtener un registro específico de auditoría
 @router.get("/{auditoria_id}", response_model=AuditoriaCambiosCompleta)
 async def get_registro_auditoria(
