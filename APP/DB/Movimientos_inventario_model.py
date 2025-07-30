@@ -9,6 +9,7 @@ class Movimientos_inventario(Base):
     ID_Movimiento = Column(Integer, primary_key=True, index=True)
     ID_Producto = Column(Integer, ForeignKey('Productos.ID_Producto'), nullable=False)
     ID_Sucursal = Column(Integer, ForeignKey('Sucursales.ID_Sucursal'), nullable=False)
+    ID_Inventario = Column(Integer, ForeignKey('Inventario.ID_Inventario'), nullable=False)
     Fecha = Column(DateTime, nullable=False, default=datetime.now)
     Tipo = Column(String(15), nullable=False)  # 'Compra', 'Venta', 'Transferencia', 'Ajuste', 'Devolucion'
     Cantidad = Column(Integer, nullable=False)
