@@ -5,9 +5,12 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 from typing import Generator
 
-conn_str = os.getenv("SQLSERVER_CONN_STR")  
+# Configuración por defecto si no existe el archivo .env
+conn_str = os.getenv("SQLSERVER_CONN_STR")
 if not conn_str:
-    raise ValueError("No se encontró la variable de entorno SQLSERVER_CONN_STR")
+    # Configuración por defecto para desarrollo
+    conn_str = "Driver={ODBC Driver 17 for SQL Server};Server=localhost;Database=Ferreteriadb;UID=sa;PWD=12345"
+    print("⚠️  Usando configuración por defecto de base de datos. Crea un archivo .env para personalizar.")
 
 quoted = urllib.parse.quote_plus(conn_str)
 SQLALCHEMY_DATABASE_URL = f"mssql+pyodbc:///?odbc_connect={quoted}"
