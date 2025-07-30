@@ -24,7 +24,7 @@ class Usuarios(Base):
 
     # Relaciones
     sucursal = relationship("Sucursales", back_populates="usuarios")
-    facturas_venta = relationship("Facturas_Venta", back_populates="usuario")
+    facturas = relationship("Facturas_Venta", back_populates="usuario")
     pagos = relationship("Pagos", back_populates="usuario")
     ordenes_compra = relationship("Ordenes_Compra", back_populates="usuario")
     movimientos_inventario = relationship("Movimientos_inventario", back_populates="usuario")

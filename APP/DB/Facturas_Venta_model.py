@@ -23,7 +23,7 @@ class Facturas_Venta(Base):
 
     # Relaciones
     cliente = relationship("Clientes", back_populates="facturas")
-    sucursal = relationship("Sucursales", back_populates="facturas")
+    sucursal = relationship("Sucursales", back_populates="facturas_venta")
     usuario = relationship("Usuarios", back_populates="facturas")
     detalles = relationship("Detalles_Factura_Venta", back_populates="factura", cascade="all, delete-orphan")
     pagos = relationship("Pagos", back_populates="factura")
