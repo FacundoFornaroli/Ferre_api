@@ -265,7 +265,28 @@ async def get_usuario(
     usuario = db.query(Usuarios).filter(Usuarios.ID_Usuario == usuario_id).first()
     if not usuario:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
-    return usuario
+    
+    # Obtener nombre de la sucursal si existe
+    sucursal_nombre = None
+    if usuario.ID_Sucursal:
+        sucursal = db.query(Sucursales).filter(Sucursales.ID_Sucursal == usuario.ID_Sucursal).first()
+        if sucursal:
+            sucursal_nombre = sucursal.Nombre
+    
+    return {
+        "id_usuario": usuario.ID_Usuario,
+        "nombre": usuario.Nombre,
+        "apellido": usuario.Apellido,
+        "email": usuario.Email,
+        "rol": usuario.Rol,
+        "estado": usuario.Estado,
+        "sucursal": sucursal_nombre,
+        "cuil": usuario.CUIL,
+        "id_sucursal": usuario.ID_Sucursal,
+        "ultimo_acceso": usuario.Ultimo_Acceso,
+        "creado_el": usuario.Creado_el,
+        "actualizado_el": usuario.Actualizado_el
+    }
 
 # Crear nuevo usuario
 @router.post("/", response_model=UsuarioCompleta)
