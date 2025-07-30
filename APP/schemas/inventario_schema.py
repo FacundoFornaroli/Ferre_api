@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, constr, validator
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 
 # Schema Base
@@ -72,7 +72,7 @@ class InventarioSimple(InventarioBase):
     )
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 # Schema para respuesta completa
 class InventarioCompleta(InventarioSimple):
@@ -113,8 +113,8 @@ class InventarioCompleta(InventarioSimple):
     )
 
     class Config:
-        orm_mode = True
-        schema_extra = {
+        from_attributes = True
+        json_schema_extra = {
             "example": {
                 "id_inventario": 1,
                 "id_producto": 1,
