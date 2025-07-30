@@ -430,10 +430,11 @@ async def update_usuario(
 async def change_usuario_estado(
     usuario_id: int = Path(..., gt=0),
     estado: bool = Query(..., description="Nuevo estado del usuario"),
-    current_user: Usuarios = Depends(check_admin_role),
+    current_user: Usuarios = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    if current_user.Rol != "Admin":
+    # Verificar que sea admin
+    if current_user.Rol.lower() != "admin":
         raise HTTPException(status_code=403, detail="Solo administradores pueden cambiar estados")
     
     if usuario_id == current_user.ID_Usuario:
