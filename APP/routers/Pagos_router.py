@@ -288,7 +288,7 @@ async def anular_pago(
     db: Session = Depends(get_db),
     current_user: Usuarios = Depends(get_current_user)
 ):
-    if current_user.Rol not in ["Admin", "Supervisor"]:
+    if current_user.Rol.lower() not in ["admin", "supervisor"]:
         raise HTTPException(status_code=403, detail="No tiene permisos para esta acción")
     
     # Verificar pago
@@ -314,40 +314,3 @@ async def anular_pago(
     db.commit()
     
     return {"message": "Pago anulado correctamente"}
-
-
-    ).first()
-    
-    # Últimos pagos
-    ultimos_pagos = db.query(
-        Pagos,
-        Facturas_Venta.Numero_Factura
-    ).join(
-        Facturas_Venta
-    ).filter(
-        Facturas_Venta.ID_Cliente == cliente_id
-    ).order_by(
-        Pagos.Fecha.desc()
-    ).limit(5).all()
-    
-    return {
-        "cliente": {
-            "id": cliente.ID_Cliente,
-            "nombre": f"{cliente.Nombre} {cliente.Apellido}",
-            "limite_credito": cliente.Limite_Credito,
-            "saldo_actual": cliente.Saldo_Actual
-        },
-        "facturas_pendientes": {
-            "cantidad": facturas_pendientes.cantidad or 0,
-            "total": facturas_pendientes.total or 0
-        },
-        "ultimos_pagos": [
-            {
-                "fecha": p.Pagos.Fecha,
-                "factura": p.Numero_Factura,
-                "metodo": p.Pagos.Metodo,
-                "monto": p.Pagos.Monto
-            }
-            for p in ultimos_pagos
-        ]
-    }
