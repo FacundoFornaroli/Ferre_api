@@ -22,13 +22,7 @@ class Movimientos_inventario(Base):
     producto = relationship("Productos", back_populates="movimientos_inventario")
     sucursal = relationship("Sucursales", back_populates="movimientos_inventario")
     usuario = relationship("Usuarios", back_populates="movimientos_inventario")
-    inventario = relationship(
-        "Inventario",
-        primaryjoin="and_(foreign(Movimientos_inventario.ID_Producto)==remote(Inventario.ID_Producto), "
-                   "foreign(Movimientos_inventario.ID_Sucursal)==remote(Inventario.ID_Sucursal))",
-        back_populates="movimientos",
-        viewonly=True
-    )
+    inventario = relationship("Inventario", back_populates="movimientos")
 
     __table_args__ = (
         CheckConstraint("Tipo IN ('Compra', 'Venta', 'Transferencia', 'Ajuste', 'Devolucion')", 
