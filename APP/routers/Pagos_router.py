@@ -79,6 +79,132 @@ async def get_pagos(
         "paginas": (total + limit - 1) // limit
     }
 
+# Obtener pagos por factura
+@router.get("/factura/{factura_id}", response_model=List[PagoCompleto])
+async def get_pagos_factura(
+    factura_id: int = Path(..., gt=0),
+    db: Session = Depends(get_db),
+    current_user: Usuarios = Depends(get_current_user)
+):
+    # Verificar factura
+    factura = db.query(Facturas_Venta).filter(
+        Facturas_Venta.ID_Factura_Venta == factura_id
+    ).first()
+    if not factura:
+        raise HTTPException(status_code=404, detail="Factura no encontrada")
+    
+    # Obtener pagos
+    pagos = db.query(Pagos).filter(
+        Pagos.ID_Factura_Venta == factura_id
+    ).order_by(Pagos.Fecha.desc()).all()
+    
+    return pagos
+
+# Obtener estadísticas de pagos
+@router.get("/estadisticas", response_model=dict)
+async def get_estadisticas_pagos(
+    desde: Optional[datetime] = None,
+    hasta: Optional[datetime] = None,
+    db: Session = Depends(get_db),
+    current_user: Usuarios = Depends(get_current_user)
+):
+    if current_user.Rol.lower() not in ["admin", "supervisor"]:
+        raise HTTPException(status_code=403, detail="No tiene permisos para esta acción")
+    
+    query = db.query(Pagos)
+    
+    if desde:
+        query = query.filter(Pagos.Fecha >= desde)
+    if hasta:
+        query = query.filter(Pagos.Fecha <= hasta)
+    
+    # Total de pagos
+    total_pagos = query.count()
+    total_monto = query.with_entities(func.sum(Pagos.Monto)).scalar() or 0
+    
+    # Por método de pago
+    por_metodo = db.query(
+        Pagos.Metodo,
+        func.count(Pagos.ID_Pago).label('cantidad'),
+        func.sum(Pagos.Monto).label('total')
+    ).group_by(Pagos.Metodo).all()
+    
+    # Promedio por pago
+    promedio_pago = total_monto / total_pagos if total_pagos > 0 else 0
+    
+    # Últimos 7 días
+    ultimos_7_dias = db.query(
+        func.count(Pagos.ID_Pago).label('cantidad'),
+        func.sum(Pagos.Monto).label('total')
+    ).filter(
+        Pagos.Fecha >= datetime.now() - timedelta(days=7)
+    ).first()
+    
+    return {
+        "total_pagos": total_pagos,
+        "total_monto": float(total_monto),
+        "promedio_pago": float(promedio_pago),
+        "por_metodo": [
+            {
+                "metodo": p.Metodo,
+                "cantidad": p.cantidad,
+                "total": float(p.total)
+            }
+            for p in por_metodo
+        ],
+        "ultimos_7_dias": {
+            "cantidad": ultimos_7_dias.cantidad or 0,
+            "total": float(ultimos_7_dias.total or 0)
+        }
+    }
+
+# Obtener resumen de pagos por cliente
+@router.get("/cliente/{cliente_id}/resumen", response_model=dict)
+async def get_resumen_cliente(
+    cliente_id: int = Path(..., gt=0),
+    db: Session = Depends(get_db),
+    current_user: Usuarios = Depends(get_current_user)
+):
+    # Verificar cliente
+    cliente = db.query(Clientes).filter(Clientes.ID_Cliente == cliente_id).first()
+    if not cliente:
+        raise HTTPException(status_code=404, detail="Cliente no encontrado")
+    
+    # Obtener facturas del cliente
+    facturas = db.query(Facturas_Venta).filter(
+        Facturas_Venta.ID_Cliente == cliente_id
+    ).all()
+    
+    factura_ids = [f.ID_Factura_Venta for f in facturas]
+    
+    # Obtener pagos
+    pagos = db.query(Pagos).filter(
+        Pagos.ID_Factura_Venta.in_(factura_ids)
+    ).all()
+    
+    total_pagado = sum(p.Monto for p in pagos)
+    total_facturado = sum(f.Total for f in facturas)
+    saldo_pendiente = total_facturado - total_pagado
+    
+    return {
+        "cliente": {
+            "id": cliente.ID_Cliente,
+            "nombre": f"{cliente.Nombre} {cliente.Apellido}",
+            "cuit": cliente.CUIT_CUIL
+        },
+        "resumen": {
+            "total_facturado": float(total_facturado),
+            "total_pagado": float(total_pagado),
+            "saldo_pendiente": float(saldo_pendiente),
+            "cantidad_facturas": len(facturas),
+            "cantidad_pagos": len(pagos)
+        },
+        "ultimo_pago": {
+            "fecha": max(p.Fecha for p in pagos) if pagos else None,
+            "monto": float(max(p.Monto for p in pagos)) if pagos else 0
+        }
+    }
+
 # Obtener un pago específico
 @router.get("/{pago_id}", response_model=PagoCompleto)
 async def get_pago(
@@ -189,108 +315,7 @@ async def anular_pago(
     
     return {"message": "Pago anulado correctamente"}
 
-# Obtener pagos por factura
-@router.get("/factura/{factura_id}", response_model=List[PagoCompleto])
-async def get_pagos_factura(
-    factura_id: int = Path(..., gt=0),
-    db: Session = Depends(get_db),
-    current_user: Usuarios = Depends(get_current_user)
-):
-    # Verificar factura
-    factura = db.query(Facturas_Venta).filter(
-        Facturas_Venta.ID_Factura_Venta == factura_id
-    ).first()
-    if not factura:
-        raise HTTPException(status_code=404, detail="Factura no encontrada")
-    
-    pagos = db.query(Pagos).filter(
-        Pagos.ID_Factura_Venta == factura_id
-    ).order_by(Pagos.Fecha).all()
-    
-    return pagos
 
-# Obtener estadísticas de pagos
-@router.get("/estadisticas", response_model=dict)
-async def get_estadisticas_pagos(
-    desde: Optional[datetime] = None,
-    hasta: Optional[datetime] = None,
-    db: Session = Depends(get_db),
-    current_user: Usuarios = Depends(get_current_user)
-):
-    if current_user.Rol not in ["Admin", "Supervisor"]:
-        raise HTTPException(status_code=403, detail="No tiene permisos para esta acción")
-    
-    query = db.query(Pagos)
-    
-    if desde:
-        query = query.filter(Pagos.Fecha >= desde)
-    if hasta:
-        query = query.filter(Pagos.Fecha <= hasta)
-    
-    # Totales por método de pago
-    por_metodo = db.query(
-        Pagos.Metodo,
-        func.count(Pagos.ID_Pago).label('cantidad'),
-        func.sum(Pagos.Monto).label('total')
-    ).filter(
-        *query.whereclause.clauses if query.whereclause else []
-    ).group_by(Pagos.Metodo).all()
-    
-    # Pagos por día
-    por_dia = db.query(
-        func.date(Pagos.Fecha).label('fecha'),
-        func.count(Pagos.ID_Pago).label('cantidad'),
-        func.sum(Pagos.Monto).label('total')
-    ).filter(
-        *query.whereclause.clauses if query.whereclause else []
-    ).group_by(
-        func.date(Pagos.Fecha)
-    ).order_by(
-        func.date(Pagos.Fecha).desc()
-    ).limit(30).all()
-    
-    return {
-        "por_metodo": [
-            {
-                "metodo": p.Metodo,
-                "cantidad": p.cantidad,
-                "total": p.total
-            }
-            for p in por_metodo
-        ],
-        "por_dia": [
-            {
-                "fecha": p.fecha,
-                "cantidad": p.cantidad,
-                "total": p.total
-            }
-            for p in por_dia
-        ],
-        "periodo": {
-            "desde": desde,
-            "hasta": hasta
-        }
-    }
-
-# Obtener resumen de cuenta por cliente
-@router.get("/cliente/{cliente_id}/resumen", response_model=dict)
-async def get_resumen_cliente(
-    cliente_id: int = Path(..., gt=0),
-    db: Session = Depends(get_db),
-    current_user: Usuarios = Depends(get_current_user)
-):
-    # Verificar cliente
-    cliente = db.query(Clientes).filter(Clientes.ID_Cliente == cliente_id).first()
-    if not cliente:
-        raise HTTPException(status_code=404, detail="Cliente no encontrado")
-    
-    # Facturas pendientes
-    facturas_pendientes = db.query(
-        func.count(Facturas_Venta.ID_Factura_Venta).label('cantidad'),
-        func.sum(Facturas_Venta.Total).label('total')
-    ).filter(
-        Facturas_Venta.ID_Cliente == cliente_id,
-        Facturas_Venta.Estado.in_(["Emitida", "Pendiente"])
     ).first()
     
     # Últimos pagos
