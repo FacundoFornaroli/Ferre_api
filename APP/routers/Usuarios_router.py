@@ -116,7 +116,7 @@ async def login(
             )
         
         # Verificar que la contraseña esté hasheada
-        if not user.Contraseña.startswith("$2b$"):
+        if user.Contraseña and not user.Contraseña.startswith("$2b$"):
             # Si no está hasheada, hashearla
             user.Contraseña = get_password_hash(user.Contraseña)
             db.commit()
@@ -157,32 +157,11 @@ async def login(
                 "sucursal_id": user.ID_Sucursal
             }
         }
+    except HTTPException:
+        # Re-lanzar excepciones HTTP
+        raise
     except Exception as e:
         print(f"Error en login: {str(e)}")
-        if "hash could not be identified" in str(e):
-            # Si el error es de hash, intentar hashear la contraseña
-            try:
-                user.Contraseña = get_password_hash(user.Contraseña)
-                db.commit()
-                # Intentar verificar nuevamente
-                if verify_password(form_data.password, user.Contraseña):
-                    access_token = create_access_token(
-                        data={"sub": user.Email, "rol": user.Rol}
-                    )
-                    return {
-                        "access_token": access_token,
-                        "token_type": "bearer",
-                        "user": {
-                            "id": user.ID_Usuario,
-                            "email": user.Email,
-                            "nombre": user.Nombre,
-                            "apellido": user.Apellido,
-                            "rol": user.Rol,
-                            "sucursal_id": user.ID_Sucursal
-                        }
-                    }
-            except:
-                pass
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error al procesar el login"
