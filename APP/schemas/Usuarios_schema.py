@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, constr, EmailStr
+from pydantic import BaseModel, Field, constr, EmailStr, field_validator
 from typing import Optional, List
 from datetime import datetime
 
@@ -27,53 +27,57 @@ class TokenData(BaseModel):
     email: Optional[str] = None
 
 class UsuarioBase(BaseModel):
-    nombre: constr(min_length=1, max_length=100) = Field(..., description="Nombre del usuario")
-    apellido: constr(min_length=1, max_length=100) = Field(..., description="Apellido del usuario")
-    cuil: Optional[constr(min_length=11, max_length=13)] = Field(None, description="CUIL del usuario")
-    rol: constr(min_length=1, max_length=50) = Field(..., description="Rol del usuario")
-    email: EmailStr = Field(..., description="Email del usuario")
-    id_sucursal: Optional[int] = Field(None, description="ID de la sucursal asignada")
+    Nombre: constr(min_length=1, max_length=100) = Field(..., description="Nombre del usuario", alias="nombre")
+    Apellido: constr(min_length=1, max_length=100) = Field(..., description="Apellido del usuario", alias="apellido")
+    CUIL: Optional[constr(min_length=11, max_length=13)] = Field(None, description="CUIL del usuario", alias="cuil")
+    Rol: constr(min_length=1, max_length=50) = Field(..., description="Rol del usuario", alias="rol")
+    Email: EmailStr = Field(..., description="Email del usuario", alias="email")
+    ID_Sucursal: Optional[int] = Field(None, description="ID de la sucursal asignada", alias="id_sucursal")
 
     class Config:
         from_attributes = True
+        populate_by_name = True
 
 class UsuarioCreate(UsuarioBase):
-    contraseña: constr(min_length=6) = Field(..., description="Contraseña del usuario")
+    Contraseña: constr(min_length=6) = Field(..., description="Contraseña del usuario", alias="contraseña")
 
 class UsuarioUpdate(BaseModel):
-    nombre: Optional[constr(min_length=1, max_length=100)] = Field(None, description="Nombre del usuario")
-    apellido: Optional[constr(min_length=1, max_length=100)] = Field(None, description="Apellido del usuario")
-    cuil: Optional[constr(min_length=11, max_length=13)] = Field(None, description="CUIL del usuario")
-    rol: Optional[constr(min_length=1, max_length=50)] = Field(None, description="Rol del usuario")
-    email: Optional[EmailStr] = Field(None, description="Email del usuario")
-    contraseña: Optional[constr(min_length=6)] = Field(None, description="Nueva contraseña del usuario")
-    id_sucursal: Optional[int] = Field(None, description="ID de la sucursal asignada")
-    estado: Optional[bool] = Field(None, description="Estado del usuario")
+    Nombre: Optional[constr(min_length=1, max_length=100)] = Field(None, description="Nombre del usuario", alias="nombre")
+    Apellido: Optional[constr(min_length=1, max_length=100)] = Field(None, description="Apellido del usuario", alias="apellido")
+    CUIL: Optional[constr(min_length=11, max_length=13)] = Field(None, description="CUIL del usuario", alias="cuil")
+    Rol: Optional[constr(min_length=1, max_length=50)] = Field(None, description="Rol del usuario", alias="rol")
+    Email: Optional[EmailStr] = Field(None, description="Email del usuario", alias="email")
+    Contraseña: Optional[constr(min_length=6)] = Field(None, description="Nueva contraseña del usuario", alias="contraseña")
+    ID_Sucursal: Optional[int] = Field(None, description="ID de la sucursal asignada", alias="id_sucursal")
+    Estado: Optional[bool] = Field(None, description="Estado del usuario", alias="estado")
 
     class Config:
         from_attributes = True
+        populate_by_name = True
 
 class UsuarioSimple(BaseModel):
-    id_usuario: int = Field(..., description="ID único del usuario")
-    nombre: str = Field(..., description="Nombre del usuario")
-    apellido: str = Field(..., description="Apellido del usuario")
-    email: str = Field(..., description="Email del usuario")
-    rol: str = Field(..., description="Rol del usuario")
-    estado: bool = Field(..., description="Estado del usuario")
+    ID_Usuario: int = Field(..., description="ID único del usuario", alias="id_usuario")
+    Nombre: str = Field(..., description="Nombre del usuario", alias="nombre")
+    Apellido: str = Field(..., description="Apellido del usuario", alias="apellido")
+    Email: str = Field(..., description="Email del usuario", alias="email")
+    Rol: str = Field(..., description="Rol del usuario", alias="rol")
+    Estado: bool = Field(..., description="Estado del usuario", alias="estado")
     sucursal: Optional[str] = Field(None, description="Nombre de la sucursal asignada")
 
     class Config:
         from_attributes = True
+        populate_by_name = True
 
 class UsuarioCompleta(UsuarioSimple):
-    cuil: Optional[str] = Field(None, description="CUIL del usuario")
-    id_sucursal: Optional[int] = Field(None, description="ID de la sucursal asignada")
-    ultimo_acceso: Optional[datetime] = Field(None, description="Fecha y hora del último acceso")
-    creado_el: datetime = Field(..., description="Fecha y hora de creación")
-    actualizado_el: datetime = Field(..., description="Fecha y hora de última actualización")
+    CUIL: Optional[str] = Field(None, description="CUIL del usuario", alias="cuil")
+    ID_Sucursal: Optional[int] = Field(None, description="ID de la sucursal asignada", alias="id_sucursal")
+    Ultimo_Acceso: Optional[datetime] = Field(None, description="Fecha y hora del último acceso", alias="ultimo_acceso")
+    Creado_el: datetime = Field(..., description="Fecha y hora de creación", alias="creado_el")
+    Actualizado_el: datetime = Field(..., description="Fecha y hora de última actualización", alias="actualizado_el")
 
     class Config:
         from_attributes = True
+        populate_by_name = True
         json_schema_extra = {
             "example": {
                 "id_usuario": 1,
