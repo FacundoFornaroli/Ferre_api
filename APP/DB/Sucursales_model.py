@@ -24,7 +24,7 @@ class Sucursales(Base):
     inventario = relationship("Inventario", back_populates="sucursal")
     facturas_venta = relationship("Facturas_Venta", back_populates="sucursal")
     ordenes_compra = relationship("Ordenes_Compra", back_populates="sucursal")
-    movimientos = relationship("Movimientos_inventario", back_populates="sucursal")
+    movimientos_inventario = relationship("Movimientos_inventario", back_populates="sucursal")
     transferencias_origen = relationship(
         "Transferencias_Sucursales",
         foreign_keys="Transferencias_Sucursales.ID_Sucursal_Origen",
