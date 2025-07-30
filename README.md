@@ -221,9 +221,9 @@ Este proyecto está bajo la Licencia MIT. Ver el archivo `LICENSE` para más det
 
 ## 📞 Contacto y Soporte
 
-- **GitHub**: [Tu perfil de GitHub]
-- **Email**: [Tu email]
-- **LinkedIn**: [Tu perfil de LinkedIn]
+- **GitHub**: [FacundoFornaroli]
+- **Email**: [fornarolifuhrfacundo@gmail.com]
+- **LinkedIn**: [www.linkedin.com/in/facundofornaroli]
 
 ### Para otros principiantes:
 Si también estás aprendiendo desarrollo backend, ¡me encantaría conectarme contigo! Podemos compartir experiencias, resolver problemas juntos y aprender de nuestros errores.
